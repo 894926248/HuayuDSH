@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { createReadStream } from 'node:fs'
-import { basename, dirname, relative, resolve, sep } from 'node:path'
+import { dirname, relative, resolve, sep } from 'node:path'
 
 const root = resolve(import.meta.dirname, '../..')
 const upstreamRoot = resolve(root, 'upstream')
@@ -19,8 +19,7 @@ function parseOptions() {
   const values = new Map()
   for (let index = 1; index < args.length; index += 1) {
     const value = args[index]
-    if (value === '--allow-dirty') values.set(value, 'true')
-    else if (value?.startsWith('--')) values.set(value, args[++index])
+    if (value?.startsWith('--')) values.set(value, args[++index])
     else throw new Error(`unexpected argument: ${value}`)
   }
   return { command, values }
