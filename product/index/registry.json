@@ -14,11 +14,11 @@
       "id": "D01",
       "area": "desktop",
       "title": "Electron shell and native identity",
-      "status": "MIGRATING",
+      "status": "ACTIVE",
       "owner": "product/current/desktop",
-      "sourcePaths": ["apps/desktop"],
-      "upstreamDependency": "Electron shell may import the public profile boot entry; it must not own private Web implementation files.",
-      "updateRule": "Rebuild against the pinned upstream commit and verify the embedded runtime closure.",
+      "sourcePaths": ["product/current/desktop"],
+      "upstreamDependency": "The shell starts the public Web profile entry from the packaged upstream runtime mirror.",
+      "updateRule": "Build and verify the complete upstream runtime mirror before packaging the shell.",
       "verify": "product/build/build-desktop-release.mjs"
     },
     {
@@ -82,7 +82,7 @@
       "title": "Electron preload bridge contracts",
       "status": "MIGRATING",
       "owner": "product/current/shared",
-      "sourcePaths": ["apps/desktop/src/bridge.ts"],
+      "sourcePaths": ["product/current/desktop/src/bridge.ts"],
       "upstreamDependency": "Renderer and Electron main communicate only through the typed preload bridge.",
       "updateRule": "Version bridge messages with the product release and verify both faces together.",
       "verify": "product/checks/release-lock.mjs"
@@ -93,7 +93,7 @@
       "title": "Git-bound build, release lock, and retention",
       "status": "ACTIVE",
       "owner": "product/checks",
-      "sourcePaths": ["apps/desktop/package.json", "product/manifests"],
+      "sourcePaths": ["product/current/desktop/package.json", "product/manifests"],
       "upstreamDependency": "Release identity is the pair of product and upstream Git trees.",
       "updateRule": "A release requires clean worktrees, a version manifest, artifact hashes, and a retained version directory.",
       "verify": "product/build/build-desktop-release.mjs"

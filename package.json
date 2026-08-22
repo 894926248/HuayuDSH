@@ -1,0 +1,23 @@
+{
+  "name": "huayu-dsh-product",
+  "version": "0.1.0-dev.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "product:validate": "node product/checks/validate-product-index.mjs validate",
+    "product:upstream": "node product/checks/verify-upstream-clean.mjs",
+    "product:build": "node product/build/build-desktop-release.mjs",
+    "product:artifacts": "node product/checks/retain-artifacts.mjs list"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
+    "tsdown": "^0.22.2",
+    "typescript": "^6.0.3"
+  }
+}

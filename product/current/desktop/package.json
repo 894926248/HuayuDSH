@@ -1,0 +1,65 @@
+{
+  "name": "@huayu-dsh/desktop",
+  "description": "DeepSeek Harness desktop shell owned by the HuayuDSH product layer",
+  "version": "0.1.0-dev.1",
+  "private": true,
+  "type": "module",
+  "main": "lib/bundle/main.js",
+  "author": "HuayuDSH",
+  "scripts": {
+    "build": "tsc -b && tsdown",
+    "dev": "electron .",
+    "stage-host": "node scripts/runtime-host.mjs stage",
+    "verify-host": "node scripts/runtime-host.mjs verify",
+    "package": "pnpm run build && pnpm run stage-host && electron-builder --dir",
+    "dist": "pnpm run build && pnpm run stage-host && electron-builder"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
+    "tsdown": "^0.22.2",
+    "typescript": "^6.0.3"
+  },
+  "build": {
+    "appId": "ai.deepseek.harness",
+    "productName": "DeepSeek Harness",
+    "executableName": "DeepSeek Harness",
+    "artifactName": "DeepSeek Harness.${ext}",
+    "directories": {
+      "output": "../../artifacts/staging/desktop"
+    },
+    "files": [
+      "lib/bundle/**/*",
+      "package.json"
+    ],
+    "icon": "build/icon.ico",
+    "extraResources": [
+      {
+        "from": "../../artifacts/staging/runtime/dsh-host-payload",
+        "to": "dsh-host-payload"
+      },
+      {
+        "from": "../../artifacts/staging/runtime/dsh-host-payload/node_modules",
+        "to": "dsh-host-payload/node_modules",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "build/icon-light.png",
+        "to": "icons/icon-light.png"
+      },
+      {
+        "from": "build/icon-dark.png",
+        "to": "icons/icon-dark.png"
+      }
+    ],
+    "asar": false,
+    "npmRebuild": false,
+    "win": {
+      "target": ["portable"]
+    },
+    "portable": {
+      "artifactName": "DeepSeek Harness.${ext}"
+    }
+  }
+}

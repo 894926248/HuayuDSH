@@ -3,8 +3,10 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from
 import { resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '../..')
+const upstreamRoot = resolve(root, 'upstream')
 const artifactsRoot = resolve(root, 'product/artifacts')
 const stagingRoot = resolve(artifactsRoot, 'staging/desktop')
+const unpackedRoot = resolve(stagingRoot, 'win-unpacked')
 const releasesRoot = resolve(artifactsRoot, 'releases')
 const activeRoot = resolve(artifactsRoot, 'active')
 const version = JSON.parse(readFileSync(resolve(root, 'product/manifests/product-version.json'), 'utf8')).version
@@ -20,10 +22,21 @@ function requireClean(cwd, label) {
   if (status !== '') throw new Error(`${label} worktree is dirty:\n${status}`)
 }
 
-function run(command, args) {
+function run(command, args, cwd = root) {
   const executable = process.platform === 'win32' && command === 'pnpm' ? 'pnpm.cmd' : command
-  const result = spawnSync(executable, args, { cwd: root, stdio: 'inherit', windowsHide: true })
+  const result = spawnSync(executable, args, { cwd, stdio: 'inherit', windowsHide: true })
+  if (result.error !== undefined) throw result.error
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with exit code ${String(result.status)}`)
+}
+
+function requireBuildDependencies() {
+  const required = [
+    resolve(root, 'node_modules/.bin/tsc'),
+    resolve(root, 'node_modules/.bin/tsdown'),
+    resolve(root, 'node_modules/.bin/electron-builder'),
+  ]
+  const missing = required.filter(path => !existsSync(path) && !existsSync(`${path}.cmd`))
+  if (missing.length > 0) throw new Error(`product dependencies are missing; run pnpm install in ${root}`)
 }
 
 function copyTopLevelArtifacts() {
@@ -35,7 +48,9 @@ function copyTopLevelArtifacts() {
     if (!/\.(exe|blockmap|yml|yaml)$/iu.test(entry.name)) continue
     cpSync(resolve(stagingRoot, entry.name), resolve(releaseRoot, entry.name))
   }
-  if (!readdirSync(releaseRoot).some(name => name.endsWith('.exe'))) throw new Error(`desktop staging produced no executable in ${stagingRoot}`)
+  if (!readdirSync(releaseRoot).some(name => name.endsWith('.exe'))) {
+    throw new Error(`desktop staging produced no executable in ${stagingRoot}`)
+  }
 }
 
 function publishActive() {
@@ -48,13 +63,25 @@ function publishActive() {
 
 try {
   requireClean(root, 'product')
-  requireClean(resolve(root, 'upstream'), 'upstream')
+  requireClean(upstreamRoot, 'upstream')
+  requireBuildDependencies()
   run('node', ['product/checks/validate-product-index.mjs', 'validate'])
-  if (existsSync(releaseRoot) && !replace) throw new Error(`release already exists: ${releaseRoot}; use --replace only for the same unreleased version`)
+  if (existsSync(releaseRoot) && !replace) {
+    throw new Error(`release already exists: ${releaseRoot}; use --replace only for the same unreleased version`)
+  }
+
   rmSync(stagingRoot, { recursive: true, force: true })
   mkdirSync(stagingRoot, { recursive: true })
-  run('pnpm', ['run', 'build:desktop'])
-  run('pnpm', ['--filter', '@deepseek-ai/dsh-desktop', 'run', 'dist'])
+  run('pnpm', ['run', 'build'], upstreamRoot)
+  run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'build'])
+  run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'stage-host'])
+  run('pnpm', ['--filter', '@huayu-dsh/desktop', 'exec', 'electron-builder'])
+  run('node', [
+    'product/current/desktop/scripts/runtime-host.mjs',
+    'verify',
+    '--unpacked',
+    unpackedRoot,
+  ])
   copyTopLevelArtifacts()
   run('node', ['product/checks/release-lock.mjs', 'write', '--version', version, '--artifact-root', `product/artifacts/releases/v${version}`])
   publishActive()
