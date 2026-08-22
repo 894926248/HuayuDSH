@@ -45,7 +45,7 @@ function requireBuildDependencies() {
 function prepareUpstreamBuildScaffold() {
   const directory = resolve(upstreamRoot, 'lib/types')
   mkdirSync(directory, { recursive: true })
-  for (const name of ['index.js', 'invariant.js', 'startup.js']) {
+  for (const name of ['index.js', 'invariant.js', 'startup.js', '{index,invariant,startup}.js']) {
     const path = resolve(directory, name)
     if (!existsSync(path)) writeFileSync(path, 'export {}\n', 'utf8')
   }
