@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '../..')
@@ -42,6 +42,15 @@ function requireBuildDependencies() {
   if (missing.length > 0) throw new Error(`product dependencies are missing; run pnpm install in ${root}`)
 }
 
+function prepareUpstreamBuildScaffold() {
+  const directory = resolve(upstreamRoot, 'lib/types')
+  mkdirSync(directory, { recursive: true })
+  for (const name of ['index.js', 'invariant.js', 'startup.js']) {
+    const path = resolve(directory, name)
+    if (!existsSync(path)) writeFileSync(path, 'export {}\n', 'utf8')
+  }
+}
+
 function copyTopLevelArtifacts() {
   if (!existsSync(stagingRoot)) throw new Error(`desktop staging output is missing: ${stagingRoot}`)
   rmSync(releaseRoot, { recursive: true, force: true })
@@ -75,6 +84,7 @@ try {
 
   rmSync(stagingRoot, { recursive: true, force: true })
   mkdirSync(stagingRoot, { recursive: true })
+  prepareUpstreamBuildScaffold()
   run('pnpm', ['run', 'build'], upstreamRoot)
   run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'build'])
   run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'stage-host'])
