@@ -50,13 +50,25 @@ function prepareUpstreamBuildScaffold() {
     const path = resolve(directory, name)
     if (!existsSync(path)) writeFileSync(path, 'export {}\n', 'utf8')
   }
-  const config = `import { defineConfig } from 'tsdown'\n\nexport default defineConfig({\n  entry: ['lib/types/index.js'],\n  outDir: 'lib',\n  format: ['esm'],\n  platform: 'node',\n  target: 'es2024',\n  fixedExtension: false,\n  dts: false,\n  clean: false,\n})\n`
+  const packageDirectories = []
   for (const entry of readdirSync(resolve(upstreamRoot, 'vendor'), { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue
-    const directory = resolve(upstreamRoot, 'vendor', entry.name)
+    if (entry.isDirectory()) packageDirectories.push(resolve(upstreamRoot, 'vendor', entry.name))
+  }
+  for (const group of readdirSync(resolve(upstreamRoot, 'packages'), { withFileTypes: true })) {
+    if (!group.isDirectory()) continue
+    for (const entry of readdirSync(resolve(upstreamRoot, 'packages', group.name), { withFileTypes: true })) {
+      if (entry.isDirectory()) packageDirectories.push(resolve(upstreamRoot, 'packages', group.name, entry.name))
+    }
+  }
+  for (const directory of packageDirectories) {
     const packagePath = resolve(directory, 'package.json')
     const configPath = resolve(directory, 'tsdown.config.ts')
     if (!existsSync(packagePath) || existsSync(configPath)) continue
+    const entries = ['index', 'invariant', 'startup']
+      .filter(name => existsSync(resolve(directory, 'src', `${name}.ts`)))
+      .map(name => `lib/types/${name}.js`)
+    if (entries.length === 0) continue
+    const config = `import { defineConfig } from 'tsdown'\n\nexport default defineConfig(({ env }) => ({\n  entry: env?.DSH_BUILD_FACE === 'client' ? '' : ${JSON.stringify(entries)},\n  outDir: 'lib',\n  format: ['esm'],\n  platform: 'node',\n  target: 'es2024',\n  fixedExtension: false,\n  dts: false,\n  clean: false,\n}))\n`
     writeFileSync(configPath, config, 'utf8')
     temporaryFiles.push(configPath)
   }
