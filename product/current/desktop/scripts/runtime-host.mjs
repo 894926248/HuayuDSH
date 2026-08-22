@@ -66,7 +66,7 @@ async function deployProductionClosure() {
   manifest.dependencies = dependencies
   await writeFile(cliPackagePath, `${JSON.stringify(manifest, null, 2)}\n`)
   try {
-    execFileSync('pnpm.cmd', ['--config.node-linker=hoisted', 'deploy', '--filter', '@deepseek-ai/dsh', '--prod', '--legacy', payloadRoot], {
+    execFileSync('pnpm.cmd', ['--config.node-linker=hoisted', 'deploy', '--filter', '@deepseek-ai/dsh', '--prod', '--legacy', '--force', payloadRoot], {
       cwd: sourceRoot,
       stdio: 'inherit',
       windowsHide: true,
