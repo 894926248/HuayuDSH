@@ -43,12 +43,24 @@ function requireBuildDependencies() {
 }
 
 function prepareUpstreamBuildScaffold() {
+  const temporaryFiles = []
   const directory = resolve(upstreamRoot, 'lib/types')
   mkdirSync(directory, { recursive: true })
   for (const name of ['index.js', 'invariant.js', 'startup.js', '{index,invariant,startup}.js']) {
     const path = resolve(directory, name)
     if (!existsSync(path)) writeFileSync(path, 'export {}\n', 'utf8')
   }
+  const config = `import { defineConfig } from 'tsdown'\n\nexport default defineConfig({\n  entry: ['lib/types/index.js'],\n  outDir: 'lib',\n  format: ['esm'],\n  platform: 'node',\n  target: 'es2024',\n  fixedExtension: false,\n  dts: false,\n  clean: false,\n})\n`
+  for (const entry of readdirSync(resolve(upstreamRoot, 'vendor'), { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const directory = resolve(upstreamRoot, 'vendor', entry.name)
+    const packagePath = resolve(directory, 'package.json')
+    const configPath = resolve(directory, 'tsdown.config.ts')
+    if (!existsSync(packagePath) || existsSync(configPath)) continue
+    writeFileSync(configPath, config, 'utf8')
+    temporaryFiles.push(configPath)
+  }
+  return temporaryFiles
 }
 
 function cleanUpstreamBuildOutputs() {
@@ -104,8 +116,12 @@ try {
   rmSync(stagingRoot, { recursive: true, force: true })
   mkdirSync(stagingRoot, { recursive: true })
   cleanUpstreamBuildOutputs()
-  prepareUpstreamBuildScaffold()
-  buildUpstream()
+  const temporaryBuildFiles = prepareUpstreamBuildScaffold()
+  try {
+    buildUpstream()
+  } finally {
+    for (const path of temporaryBuildFiles) rmSync(path, { force: true })
+  }
   run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'build'])
   run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'stage-host'])
   run('pnpm', ['--filter', '@huayu-dsh/desktop', 'exec', 'electron-builder'])
