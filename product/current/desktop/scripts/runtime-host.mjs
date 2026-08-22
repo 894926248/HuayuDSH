@@ -68,6 +68,7 @@ async function deployProductionClosure() {
   try {
     execFileSync('pnpm.cmd', ['--config.node-linker=hoisted', 'deploy', '--filter', '@deepseek-ai/dsh', '--prod', '--legacy', '--force', payloadRoot], {
       cwd: sourceRoot,
+      env: { ...process.env, CI: 'true' },
       stdio: 'inherit',
       windowsHide: true,
       shell: true,
