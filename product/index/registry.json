@@ -93,7 +93,7 @@
       "title": "Git-bound build, release lock, and retention",
       "status": "ACTIVE",
       "owner": "product/checks",
-      "sourcePaths": ["product/current/desktop/package.json", "product/manifests"],
+      "sourcePaths": ["product/build", "product/current/desktop/package.json", "product/manifests"],
       "upstreamDependency": "Release identity is the pair of product and upstream Git trees.",
       "updateRule": "A release requires clean worktrees, a version manifest, artifact hashes, and a retained version directory.",
       "verify": "product/build/build-desktop-release.mjs"

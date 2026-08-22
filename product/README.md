@@ -44,6 +44,8 @@ The long-term product repository should be a separate sibling or remote reposito
 
 All product artifacts use `product/artifacts/`. `staging/` holds one replaceable build, `active/` holds the files used by the repaired shortcut, `releases/<version>/` holds retained release files and its `release-lock.json`, and `cache/` holds disposable keyed build inputs. The default retention policy keeps three successful releases and three cache entries.
 
+The release builder clears upstream generated output before the full Host, Client, and Web build. This prevents ignored `lib/` files or TypeScript build metadata from being reused across releases and makes the packaged runtime depend only on the pinned upstream commit and product overlay.
+
 Release preparation is Git-bound:
 
 ```powershell

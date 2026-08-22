@@ -51,6 +51,10 @@ function prepareUpstreamBuildScaffold() {
   }
 }
 
+function cleanUpstreamBuildOutputs() {
+  run('pnpm', ['run', 'clean'], upstreamRoot)
+}
+
 function buildUpstream() {
   const configPath = resolve(upstreamRoot, 'tsdown.config.ts')
   const original = readFileSync(configPath, 'utf8')
@@ -99,6 +103,7 @@ try {
 
   rmSync(stagingRoot, { recursive: true, force: true })
   mkdirSync(stagingRoot, { recursive: true })
+  cleanUpstreamBuildOutputs()
   prepareUpstreamBuildScaffold()
   buildUpstream()
   run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'build'])
