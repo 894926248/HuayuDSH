@@ -51,6 +51,20 @@ function prepareUpstreamBuildScaffold() {
   }
 }
 
+function buildUpstream() {
+  const configPath = resolve(upstreamRoot, 'tsdown.config.ts')
+  const original = readFileSync(configPath, 'utf8')
+  const sourceEntry = "entry: client ? '' : ['lib/types/{index,invariant,startup}.js']"
+  const buildEntry = "entry: client ? '' : ['lib/types/index.js', 'lib/types/invariant.js', 'lib/types/startup.js']"
+  if (!original.includes(sourceEntry)) throw new Error('upstream tsdown config entry contract changed; inspect before release')
+  writeFileSync(configPath, original.replace(sourceEntry, buildEntry), 'utf8')
+  try {
+    run('pnpm', ['run', 'build'], upstreamRoot)
+  } finally {
+    writeFileSync(configPath, original, 'utf8')
+  }
+}
+
 function copyTopLevelArtifacts() {
   if (!existsSync(stagingRoot)) throw new Error(`desktop staging output is missing: ${stagingRoot}`)
   rmSync(releaseRoot, { recursive: true, force: true })
@@ -85,7 +99,7 @@ try {
   rmSync(stagingRoot, { recursive: true, force: true })
   mkdirSync(stagingRoot, { recursive: true })
   prepareUpstreamBuildScaffold()
-  run('pnpm', ['run', 'build'], upstreamRoot)
+  buildUpstream()
   run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'build'])
   run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'stage-host'])
   run('pnpm', ['--filter', '@huayu-dsh/desktop', 'exec', 'electron-builder'])
