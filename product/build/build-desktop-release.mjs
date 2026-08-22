@@ -24,7 +24,7 @@ function requireClean(cwd, label) {
 
 function run(command, args, cwd = root) {
   const executable = process.platform === 'win32' && command === 'pnpm' ? 'pnpm.cmd' : command
-  const result = spawnSync(executable, args, { cwd, stdio: 'inherit', windowsHide: true })
+  const result = spawnSync(executable, args, { cwd, stdio: 'inherit', windowsHide: true, shell: true })
   if (result.error !== undefined) throw result.error
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with exit code ${String(result.status)}`)
 }
