@@ -141,9 +141,58 @@ async function verifyPayload(root) {
   try {
     await runNode(root, entry, ['--profile', 'web', '--dump-config'], home)
     await verifyStandardPresetImports(root, home)
+    await verifyEmbeddedWebProfile(root, entry, home)
   } finally {
     await rm(home, { recursive: true, force: true })
   }
+}
+
+/** Boot the same official Profile API the Electron main process uses. */
+async function verifyEmbeddedWebProfile(root, entry, home) {
+  const driver = `
+import { readFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+
+const entry = process.argv.at(-1)
+if (entry === undefined) throw new Error('embedded-profile driver requires the CLI entry')
+const cli = await readFile(entry, 'utf8')
+const profileBoot = cli.match(/["']\\.\\/(profile-boot-[^"']+\\.js)["']/u)?.[1]
+if (profileBoot === undefined) throw new Error('official CLI bundle does not reference a profile boot module')
+const requireFromCli = createRequire(pathToFileURL(entry))
+const appBoot = await import(pathToFileURL(requireFromCli.resolve('@deepseek-ai/dsh-app-boot')).href)
+const profile = await import(pathToFileURL(join(dirname(entry), profileBoot)).href)
+const running = await profile.runProfile({
+  environment: appBoot.loadLayeredEnv('dsh'),
+  profile: 'web',
+  patchFiles: [],
+  args: ['--no-open', '--port', '0'],
+})
+try {
+  const port = running.ctx.get('webServer')?.port
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('official Web Profile did not publish a listening port')
+  const response = await fetch('http://127.0.0.1:' + String(port))
+  const document = await response.text()
+  if (!response.ok || !document.includes('globalThis["__DSH_BOOT__"]')) throw new Error('official Web Profile did not serve its boot document')
+} finally {
+  await running.shutdown.shutdown(0)
+}
+`
+  await new Promise((resolveExit, reject) => {
+    const child = spawn(process.execPath, ['--input-type=module', '--eval', driver, '--', entry], {
+      cwd: root,
+      env: { ...process.env, DSH_HOME: home, ELECTRON_RUN_AS_NODE: '1' },
+      stdio: ['ignore', 'ignore', 'pipe'],
+      windowsHide: true,
+    })
+    let stderr = ''
+    child.stderr.on('data', chunk => { stderr = `${stderr}${chunk}`.slice(-8192) })
+    child.once('error', reject)
+    child.once('exit', code => code === 0
+      ? resolveExit()
+      : reject(new Error(`desktop host closure: embedded Web Profile failed with code ${String(code)}: ${stderr.trim()}`)))
+  })
 }
 
 async function verifyStandardPresetImports(root, home) {

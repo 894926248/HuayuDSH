@@ -24,7 +24,7 @@ pnpm run desktop:dist
 
 非当前会话完成时，通用 Web 会话列表会把这个状态投影给桌面壳。Windows 会让固定的应用任务栏按钮闪烁，并显示一个小红色覆盖标记；窗口获得焦点或完成提醒被消费后，标记会清除。这部分是壳拥有的操作系统表现，插件 entry 不需要加入任务栏逻辑，也不会被修改。
 
-桌面壳会从内置上游运行时闭包导入 `lib/bin.js`，在 Electron 主进程内启动 Web Profile，关闭 Profile 默认打开系统浏览器的行为，请操作系统分配一个可用的 loopback 端口，再由渲染器加载该地址。它不会自动附着到其他进程占用的端口。普通浏览器 Profile 仍默认使用 `http://127.0.0.1:3080`；`DSH_DESKTOP_HOST_URL` 可以显式指定已经运行的 loopback Web 宿主。`DSH_DESKTOP_HOST_PATH` 只用于开发和诊断覆盖。后端派生工具会继承 Electron 的 Node 兼容可执行模式，因此现有使用 `process.execPath` 的子进程约定仍按 Node 工具运行。
+桌面壳会从内置官方运行时闭包导入官方 Profile 启动模块，并在 Electron 主进程内挂载未修改的 Web Profile。壳通过官方命令行服务关闭默认浏览器跳转，再由渲染器加载这个应用内部的 loopback 地址。`3080` 是这个一体化应用专用的固定端口；壳不会自动附着到其他程序占用的端口。`DSH_DESKTOP_HOST_URL` 只保留给开发诊断使用。官方功能层派生的工具通过 `ELECTRON_RUN_AS_NODE=1` 继承 Electron 的 Node 兼容模式。
 
 第二次启动获取不到第二实例锁时，会把激活动作发送给已有进程；已有窗口恢复、显示、获得焦点，并短暂闪烁任务栏。渲染器保持隔离上下文，关闭 Node 集成，外部链接交给系统浏览器。名为 `dsh-github-oauth` 的弹窗是例外：它留在 Electron 内，以便 GitHub 授权回调返回 Harness。
 

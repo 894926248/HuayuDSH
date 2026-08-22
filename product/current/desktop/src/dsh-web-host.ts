@@ -1,4 +1,8 @@
-const DSH_BOOT_MARKER = 'window.__DSH_BOOT__'
+const DSH_BOOT_MARKERS = [
+  'window.__DSH_BOOT__',
+  'globalThis["__DSH_BOOT__"]',
+  "globalThis['__DSH_BOOT__']",
+] as const
 
 /**
  * Identify the HTML document served by a compatible Harness Web host.
@@ -8,7 +12,7 @@ const DSH_BOOT_MARKER = 'window.__DSH_BOOT__'
  */
 export function isDshWebHostDocument(contentType: string | null, document: string): boolean {
   return contentType?.toLowerCase().includes('text/html') === true
-    && document.includes(DSH_BOOT_MARKER)
+    && DSH_BOOT_MARKERS.some(marker => document.includes(marker))
 }
 
 /**

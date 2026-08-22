@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module'
 import { existsSync } from 'node:fs'
 import { cp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -23,6 +24,7 @@ import { PACKAGED_HOST_ENTRY, resolveDevelopmentHostEntry } from './host-path.ts
 const TITLE_BAR_HEIGHT = 36
 const HOST_START_TIMEOUT_MS = 30_000
 const HOST_REQUEST_TIMEOUT_MS = 1_000
+const OFFICIAL_HOST_PORT = 3_080
 const HOST_LOAD_ATTEMPTS = 3
 const HOST_LOAD_RETRY_DELAY_MS = 200
 // Keep the OAuth child in Electron so its local callback can return to Harness.
@@ -61,47 +63,85 @@ let notificationOverlayIcon: Electron.NativeImage | undefined
 let taskbarNotificationActive = false
 let taskbarNotificationCount = 0
 
-/** Structural view of the embedded profile result exposed by the CLI entry. */
 interface EmbeddedWebProfile {
   ctx: { get(name: string): unknown }
   shutdown: { shutdown(code: number): Promise<void> }
 }
 
-/** Web profile owned by the Electron main process and its readiness URL. */
+interface OfficialProfileBootModule {
+  runProfile(options: {
+    environment: unknown
+    profile: string
+    patchFiles: readonly string[]
+    args: readonly string[]
+  }): Promise<EmbeddedWebProfile>
+}
+
+interface OfficialAppBootModule {
+  loadLayeredEnv(binName: string): unknown
+}
+
+/** Official Web profile mounted in the Electron main process. */
 class DshHost {
   private profile: EmbeddedWebProfile | undefined
 
-  /** Boot the Web profile in this Electron process and return its loopback URL. */
+  /** Start the unmodified official Web profile on the fixed internal port. */
   async start(): Promise<URL> {
     const configuredUrl = process.env.DSH_DESKTOP_HOST_URL
     if (configuredUrl !== undefined) return parseLoopbackUrl(configuredUrl)
     const entry = await resolveHostEntry()
-    process.env.DSH_DESKTOP = '1'
-    process.env.DSH_DESKTOP_EMBEDDED = '1'
-    const loaded = await import(pathToFileURL(entry).href) as unknown as {
-      runEmbeddedWebProfile?: () => Promise<EmbeddedWebProfile>
+    const profileEntry = await resolveProfileBootEntry(entry)
+    const requireFromHost = createRequire(pathToFileURL(entry))
+    const appBootEntry = requireFromHost.resolve('@deepseek-ai/dsh-app-boot')
+    const profileBoot = await import(pathToFileURL(profileEntry).href) as unknown as OfficialProfileBootModule
+    const appBoot = await import(pathToFileURL(appBootEntry).href) as unknown as OfficialAppBootModule
+    if (typeof profileBoot.runProfile !== 'function' || typeof appBoot.loadLayeredEnv !== 'function') {
+      throw new Error(`desktop: official embedded Web profile exports are missing near ${entry}`)
     }
-    if (loaded.runEmbeddedWebProfile === undefined) {
-      throw new Error(`desktop: host entry ${entry} does not expose the embedded Web profile`)
-    }
-    this.profile = await loaded.runEmbeddedWebProfile()
-    const webServer = this.profile.ctx.get('webServer') as { port?: unknown } | undefined
+    process.env.ELECTRON_RUN_AS_NODE = '1'
+    const profile = await profileBoot.runProfile({
+      environment: appBoot.loadLayeredEnv('dsh'),
+      profile: 'web',
+      patchFiles: [],
+      args: ['--no-open', '--port', String(OFFICIAL_HOST_PORT)],
+    })
+    this.profile = profile
+    const webServer = profile.ctx.get('webServer') as { port?: unknown } | undefined
     const port = webServer?.port
     if (typeof port !== 'number' || !Number.isInteger(port) || port < 1 || port > 65_535) {
-      throw new Error('desktop: embedded Web profile did not publish a listening port')
+      await this.stop()
+      throw new Error('desktop: official embedded Web profile did not publish a listening port')
+    }
+    if (port !== OFFICIAL_HOST_PORT) {
+      await this.stop()
+      throw new Error(`desktop: official Web profile listened on unexpected port ${String(port)}`)
     }
     const url = new URL(`http://127.0.0.1:${String(port)}`)
     await waitForHost(url)
     return url
   }
 
-  /** Dispose the embedded profile before Electron exits. */
+  /** Dispose the official Web profile before Electron exits. */
   async stop(): Promise<void> {
     const profile = this.profile
     this.profile = undefined
     if (profile === undefined) return
     await profile.shutdown.shutdown(0)
   }
+}
+
+/** Resolve the hashed official profile module referenced by the official CLI bundle. */
+async function resolveProfileBootEntry(entry: string): Promise<string> {
+  const source = await readFile(entry, 'utf8')
+  const importPath = source.match(/["']\.\/(profile-boot-[^"']+\.js)["']/u)?.[1]
+  if (importPath === undefined) {
+    throw new Error(`desktop: official CLI bundle does not reference a profile boot module: ${entry}`)
+  }
+  const profileEntry = join(dirname(entry), importPath)
+  if (!existsSync(profileEntry)) {
+    throw new Error(`desktop: official profile boot module is missing at ${profileEntry}`)
+  }
+  return profileEntry
 }
 
 async function probeHost(url: URL): Promise<void> {
@@ -148,7 +188,7 @@ async function loadHostPage(window: BrowserWindow, url: URL): Promise<void> {
 async function resolveHostEntry(): Promise<string> {
   const explicitEntry = process.env.DSH_DESKTOP_HOST_PATH
   if (!app.isPackaged) {
-    return resolveDevelopmentHostEntry(app.getAppPath(), explicitEntry)
+    return resolveDevelopmentHostEntry(app.getAppPath(), explicitEntry, process.env.DSH_DESKTOP_SOURCE_ROOT)
   }
 
   const packagedRoot = await materializePackagedHost()

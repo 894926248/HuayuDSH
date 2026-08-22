@@ -4,6 +4,7 @@ import { isDshWebHostDocument, isDshWebHostResponse } from '../src/dsh-web-host.
 describe('isDshWebHostDocument', () => {
   it('accepts the Harness boot HTML document', () => {
     expect(isDshWebHostDocument('text/html; charset=utf-8', '<script>window.__DSH_BOOT__ = {}</script>')).toBe(true)
+    expect(isDshWebHostDocument('text/html; charset=utf-8', '<script>globalThis["__DSH_BOOT__"] = {}</script>')).toBe(true)
   })
 
   it('rejects an unrelated response on the default port', () => {

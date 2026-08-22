@@ -1,0 +1,138 @@
+:root {
+  --dsh-desktop-titlebar-height: 36px;
+  --dsh-desktop-native-controls-width: 184px;
+  --dsh-desktop-window-corner-radius: 10px;
+  --dsh-desktop-workspace-corner-radius: 12px;
+}
+
+html[data-dsh-desktop] {
+  background: transparent;
+}
+
+body[data-dsh-desktop] {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--dsh-desktop-window-corner-radius);
+  background: transparent;
+  isolation: isolate;
+  overflow: hidden;
+  padding-top: 0;
+}
+
+/* Paint the application surface inside the same rounded window silhouette. */
+body[data-dsh-desktop]::before {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--dsw-alias-bg-base);
+  content: '';
+  pointer-events: none;
+}
+
+/* Keep the desktop surface visually whole without taking space from any slot. */
+body[data-dsh-desktop]::after {
+  position: fixed;
+  z-index: 2147483647;
+  inset: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+}
+
+body[data-dsh-desktop] #root {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+/* The frame color is visible only through the center column's upper-left
+   corner, linking the desktop title row to the sidebar without touching slots. */
+body[data-dsh-desktop] #root > div[data-slot='root'] > div {
+  background: var(--dsw-specific-sidebar-fill);
+}
+
+body[data-dsh-desktop] #root > div[data-slot='root'] > div > div:nth-child(2) {
+  border-top-left-radius: var(--dsh-desktop-workspace-corner-radius);
+}
+
+/* The desktop frame reads as one application surface: color and the work
+   column corner establish hierarchy without adding another divider. */
+body[data-dsh-desktop] #root > div[data-slot='root'] > div > div:first-child {
+  border-right: none;
+}
+
+/* External panels are not descendants of #root, so reserve the native title
+   row for right-edge fixed panels without changing their owned DOM. */
+body[data-dsh-desktop] [data-dsh-desktop-panel-inset='true'] {
+  top: var(--dsh-desktop-titlebar-height) !important;
+  bottom: 0 !important;
+  height: calc(100vh - var(--dsh-desktop-titlebar-height)) !important;
+}
+
+/* Keep a plugin's own compact top-right controls inside its shifted tab row.
+   The shell only marks fixed button groups that collide with its title row. */
+body[data-dsh-desktop] [data-dsh-desktop-top-control-inset='true'] {
+  top: calc(var(--dsh-desktop-titlebar-height) + var(--dsh-desktop-top-control-offset, 0px)) !important;
+}
+
+.dsh-desktop-titlebar {
+  position: relative;
+  flex: 0 0 var(--dsh-desktop-titlebar-height);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  height: var(--dsh-desktop-titlebar-height);
+  padding: 0 14px;
+  box-sizing: border-box;
+  color: var(--dsw-alias-label-secondary, #61666b);
+  background: var(--dsw-specific-sidebar-fill);
+  -webkit-app-region: drag;
+  overflow: visible;
+  user-select: none;
+}
+
+.dsh-desktop-titlebar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: calc(100% - var(--dsh-desktop-native-controls-width) - 72px);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.dsh-desktop-titlebar__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-desktop-titlebar__logo {
+  display: block;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+  background-color: currentColor;
+  -webkit-mask-image: url('/favicon.svg');
+  mask-image: url('/favicon.svg');
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsh-desktop-titlebar {
+    transition: none;
+  }
+}

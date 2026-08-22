@@ -1,0 +1,77 @@
+{
+  "schema": "dsh.product-overlay-manifest.v2",
+  "sourceCommit": "b150a551b8d465e31e418e1b2eaf5e79bbb7d28e",
+  "backendPolicy": "upstream-only",
+  "files": [
+    {
+      "layer": "frontend",
+      "path": "apps/web/src/css.d.ts",
+      "sha256": "8d1be27255125eefee51e3bfc0f82c8ff6ab38a218aa3d9a02ef8001c3da04ed"
+    },
+    {
+      "layer": "frontend",
+      "path": "apps/web/src/desktop-chrome.css",
+      "sha256": "460f31c2f39753684e85b01a36f623d9d110746c2415a27e8f0157eaaf488738"
+    },
+    {
+      "layer": "frontend",
+      "path": "apps/web/src/desktop-chrome.ts",
+      "sha256": "70480bb85325d78f6d380b76ac850f73ff2381246f1fbbcaec12c4e05b2a259b"
+    },
+    {
+      "layer": "frontend",
+      "path": "apps/web/src/main.ts",
+      "sha256": "2a1ce09766c6d0a42aa91ad65330b14dac16abfaa8cf8ac7aec2ab21eb904c49"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-conversation/src/client/chat/ChatView.module.css",
+      "sha256": "98cb3bc255d3eed7f5eaa2ca29c2af30f0b9c771aad104f42543c5fdfa69878f"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-conversation/src/client/chat/GenericCommandCard.module.css",
+      "sha256": "83c039a2b7bbbce0481f75518f692c3e78b2b4666d0fdd88a13c547ed34f2f61"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-conversation/src/client/chat/MessageIconActions.module.css",
+      "sha256": "2f23262601e61b4d7ee318e483efce3bbf42e265496361c833c0dd4003486f1c"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-conversation/src/client/chat/MessageItem.module.css",
+      "sha256": "4b98d6e78c7e83402f539141772cb30d1f9a3d07a4e6e80d4cb505aad5ad52b3"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-conversation/src/client/chat/ReasoningRow.module.css",
+      "sha256": "acc4095948625d921990b622ba5cdfef9217713b1c7a8060f41634e0634b43fa"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-conversation/src/client/skeleton/InputBar.module.css",
+      "sha256": "0dffe304a0b50d250278681927a48de5d77c63c7b6e442f3ecac408574e31f27"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-layout/src/client/AppFrame.module.css",
+      "sha256": "94e834f0399b0786bd7811455c0e71b2e118ee496c4f2a944adefb82e5d4c6b8"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-layout/src/client/AppFrame.tsx",
+      "sha256": "6ede85a1e9acac112cffbe7b7c9590712e710169a67b91a79530a91146ec8c89"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-layout/src/client/columns.ts",
+      "sha256": "cb5266493ba323ce11f8665269986e823863af1ab49135ccbb62292e4f137095"
+    },
+    {
+      "layer": "frontend",
+      "path": "packages/client/ui-layout/src/client/stores.ts",
+      "sha256": "b8beb93a0aeb7076ea5f30d43ca29a124f5f9aab73c5e7666c32af98bf71fb91"
+    }
+  ]
+}

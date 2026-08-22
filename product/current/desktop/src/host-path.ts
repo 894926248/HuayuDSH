@@ -13,10 +13,11 @@ export const PACKAGED_HOST_PAYLOAD = 'dsh-host-payload'
  * Resolve the source checkout's CLI entry from Electron's development app root.
  * @param appPath - Electron's un-packaged application directory.
  * @param explicitEntry - Optional deployment override for the CLI entry.
+ * @param sourceRoot - Optional prepared official source root used by a product build.
  * @returns the absolute CLI entry path used by the embedded profile.
  */
-export function resolveDevelopmentHostEntry(appPath: string, explicitEntry?: string): string {
-  return explicitEntry ?? join(resolve(appPath, '..', '..'), SOURCE_HOST_ENTRY)
+export function resolveDevelopmentHostEntry(appPath: string, explicitEntry?: string, sourceRoot?: string): string {
+  return explicitEntry ?? join(sourceRoot ?? resolve(appPath, '..', '..', '..', 'upstream'), SOURCE_HOST_ENTRY)
 }
 
 /**

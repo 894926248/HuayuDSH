@@ -1,10 +1,12 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '../..')
 const upstreamRoot = resolve(root, 'upstream')
 const artifactsRoot = resolve(root, 'product/artifacts')
+const sourceRoot = resolve(artifactsRoot, 'staging/source')
 const stagingRoot = resolve(artifactsRoot, 'staging/desktop')
 const unpackedRoot = resolve(stagingRoot, 'win-unpacked')
 const releasesRoot = resolve(artifactsRoot, 'releases')
@@ -43,22 +45,22 @@ function requireBuildDependencies() {
   if (missing.length > 0) throw new Error(`product dependencies are missing; run pnpm install in ${root}`)
 }
 
-function prepareUpstreamBuildScaffold() {
+function prepareUpstreamBuildScaffold(source) {
   const temporaryFiles = []
-  const directory = resolve(upstreamRoot, 'lib/types')
+  const directory = resolve(source, 'lib/types')
   mkdirSync(directory, { recursive: true })
   for (const name of ['index.js', 'invariant.js', 'startup.js', '{index,invariant,startup}.js']) {
     const path = resolve(directory, name)
     if (!existsSync(path)) writeFileSync(path, 'export {}\n', 'utf8')
   }
   const packageDirectories = []
-  for (const entry of readdirSync(resolve(upstreamRoot, 'vendor'), { withFileTypes: true })) {
-    if (entry.isDirectory()) packageDirectories.push(resolve(upstreamRoot, 'vendor', entry.name))
+  for (const entry of readdirSync(resolve(source, 'vendor'), { withFileTypes: true })) {
+    if (entry.isDirectory()) packageDirectories.push(resolve(source, 'vendor', entry.name))
   }
-  for (const group of readdirSync(resolve(upstreamRoot, 'packages'), { withFileTypes: true })) {
+  for (const group of readdirSync(resolve(source, 'packages'), { withFileTypes: true })) {
     if (!group.isDirectory()) continue
-    for (const entry of readdirSync(resolve(upstreamRoot, 'packages', group.name), { withFileTypes: true })) {
-      if (entry.isDirectory()) packageDirectories.push(resolve(upstreamRoot, 'packages', group.name, entry.name))
+    for (const entry of readdirSync(resolve(source, 'packages', group.name), { withFileTypes: true })) {
+      if (entry.isDirectory()) packageDirectories.push(resolve(source, 'packages', group.name, entry.name))
     }
   }
   for (const directory of packageDirectories) {
@@ -76,23 +78,29 @@ function prepareUpstreamBuildScaffold() {
   return temporaryFiles
 }
 
-function cleanUpstreamBuildOutputs() {
-  run('pnpm', ['run', 'clean'], upstreamRoot)
+function cleanUpstreamBuildOutputs(source) {
+  run('pnpm', ['run', 'clean'], source)
 }
 
-function buildUpstream() {
-  const configPath = resolve(upstreamRoot, 'tsdown.config.ts')
+function buildUpstream(source) {
+  const configPath = resolve(source, 'tsdown.config.ts')
   const original = readFileSync(configPath, 'utf8')
   const sourceEntry = "entry: client ? '' : ['lib/types/{index,invariant,startup}.js']"
-  const rootEntry = resolve(upstreamRoot, 'lib/types/index.js').replaceAll('\\', '/')
+  const rootEntry = resolve(source, 'lib/types/index.js').replaceAll('\\', '/')
   const buildEntry = `entry: client ? '' : ['${rootEntry}']`
   if (!original.includes(sourceEntry)) throw new Error('upstream tsdown config entry contract changed; inspect before release')
   writeFileSync(configPath, original.replace(sourceEntry, buildEntry), 'utf8')
   try {
-    run('pnpm', ['run', 'build'], upstreamRoot)
+    run('pnpm', ['run', 'build'], source)
   } finally {
     writeFileSync(configPath, original, 'utf8')
   }
+}
+
+async function removeSourceWorktree() {
+  try { git(upstreamRoot, ['worktree', 'remove', '--force', sourceRoot]) } catch {}
+  await rm(sourceRoot, { recursive: true, force: true })
+  try { git(upstreamRoot, ['worktree', 'prune']) } catch {}
 }
 
 function copyTopLevelArtifacts() {
@@ -122,28 +130,38 @@ try {
   requireClean(upstreamRoot, 'upstream')
   requireBuildDependencies()
   run('node', ['product/checks/validate-product-index.mjs', 'validate'])
+  run('node', ['product/checks/verify-product-source.mjs'])
   if (existsSync(releaseRoot) && !replace) {
     throw new Error(`release already exists: ${releaseRoot}; use --replace only for the same unreleased version`)
   }
 
   rmSync(stagingRoot, { recursive: true, force: true })
   mkdirSync(stagingRoot, { recursive: true })
-  cleanUpstreamBuildOutputs()
-  const temporaryBuildFiles = prepareUpstreamBuildScaffold()
+  run('node', ['product/build/prepare-product-source.mjs', 'product/artifacts/staging/source'])
+  const previousSourceRoot = process.env.DSH_DESKTOP_SOURCE_ROOT
+  process.env.DSH_DESKTOP_SOURCE_ROOT = sourceRoot
   try {
-    buildUpstream()
+    cleanUpstreamBuildOutputs(sourceRoot)
+    const temporaryBuildFiles = prepareUpstreamBuildScaffold(sourceRoot)
+    try {
+      buildUpstream(sourceRoot)
+    } finally {
+      for (const path of temporaryBuildFiles) rmSync(path, { force: true })
+    }
+    run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'build'])
+    run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'stage-host'])
+    run('pnpm', ['--filter', '@huayu-dsh/desktop', 'exec', 'electron-builder'])
+    run('node', [
+      'product/current/desktop/scripts/runtime-host.mjs',
+      'verify',
+      '--unpacked',
+      unpackedRoot,
+    ])
   } finally {
-    for (const path of temporaryBuildFiles) rmSync(path, { force: true })
+    if (previousSourceRoot === undefined) delete process.env.DSH_DESKTOP_SOURCE_ROOT
+    else process.env.DSH_DESKTOP_SOURCE_ROOT = previousSourceRoot
+    await removeSourceWorktree()
   }
-  run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'build'])
-  run('pnpm', ['--filter', '@huayu-dsh/desktop', 'run', 'stage-host'])
-  run('pnpm', ['--filter', '@huayu-dsh/desktop', 'exec', 'electron-builder'])
-  run('node', [
-    'product/current/desktop/scripts/runtime-host.mjs',
-    'verify',
-    '--unpacked',
-    unpackedRoot,
-  ])
   copyTopLevelArtifacts()
   run('node', ['product/checks/release-lock.mjs', 'write', '--version', version, '--artifact-root', `product/artifacts/releases/v${version}`])
   publishActive()

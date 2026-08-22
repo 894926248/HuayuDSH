@@ -9,6 +9,10 @@
   },
   "scripts": {
     "product:validate": "node product/checks/validate-product-index.mjs validate",
+    "product:source-check": "node product/checks/verify-product-source.mjs",
+    "product:frontend-sync": "node product/build/rebuild-frontend-overlay.mjs",
+    "product:frontend-import-legacy": "node product/build/rebuild-frontend-overlay.mjs --import-legacy",
+    "product:source-prepare": "node product/build/prepare-product-source.mjs product/artifacts/staging/source",
     "product:upstream": "node product/checks/verify-upstream-clean.mjs",
     "product:build": "node product/build/build-desktop-release.mjs",
     "product:artifacts": "node product/checks/retain-artifacts.mjs list"
