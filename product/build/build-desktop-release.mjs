@@ -55,7 +55,7 @@ function buildUpstream() {
   const configPath = resolve(upstreamRoot, 'tsdown.config.ts')
   const original = readFileSync(configPath, 'utf8')
   const sourceEntry = "entry: client ? '' : ['lib/types/{index,invariant,startup}.js']"
-  const buildEntry = "entry: client ? '' : ['lib/types/index.js', 'lib/types/invariant.js', 'lib/types/startup.js']"
+  const buildEntry = "entry: client ? '' : ['lib/types/index.js']"
   if (!original.includes(sourceEntry)) throw new Error('upstream tsdown config entry contract changed; inspect before release')
   writeFileSync(configPath, original.replace(sourceEntry, buildEntry), 'utf8')
   try {
