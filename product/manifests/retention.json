@@ -1,0 +1,6 @@
+{
+  "schema": "dsh.artifact-retention.v1",
+  "successfulReleases": 3,
+  "cacheEntries": 3,
+  "stagingDirectories": 1
+}

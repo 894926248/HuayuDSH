@@ -1,0 +1,7 @@
+{
+  "schema": "dsh.product-version.v1",
+  "product": "DeepSeek Harness",
+  "version": "0.1.0-dev.1",
+  "channel": "development",
+  "artifactRoot": "product/artifacts"
+}

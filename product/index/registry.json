@@ -1,0 +1,102 @@
+{
+  "schema": "dsh.product-index.v1",
+  "project": "deepseek-harness",
+  "updatedAt": "2026-08-22",
+  "areas": [
+    { "id": "frontend", "name": "Browser client" },
+    { "id": "backend", "name": "Host and API" },
+    { "id": "desktop", "name": "Electron shell" },
+    { "id": "shared", "name": "Shared contracts" },
+    { "id": "build", "name": "Build and release" }
+  ],
+  "changes": [
+    {
+      "id": "D01",
+      "area": "desktop",
+      "title": "Electron shell and native identity",
+      "status": "MIGRATING",
+      "owner": "product/current/desktop",
+      "sourcePaths": ["apps/desktop"],
+      "upstreamDependency": "Electron shell may import the public profile boot entry; it must not own private Web implementation files.",
+      "updateRule": "Rebuild against the pinned upstream commit and verify the embedded runtime closure.",
+      "verify": "product/build/build-desktop-release.mjs"
+    },
+    {
+      "id": "F01",
+      "area": "frontend",
+      "title": "Desktop chrome and outer frame",
+      "status": "MIGRATING",
+      "owner": "product/current/frontend",
+      "sourcePaths": ["apps/web/src/desktop-chrome.ts", "apps/web/src/desktop-chrome.css"],
+      "upstreamDependency": "Use the client module and root/layout extension points.",
+      "updateRule": "Do not edit apps/web/src/main.ts; mount a client plugin through a product patch.",
+      "verify": "product/checks/verify-upstream-clean.mjs"
+    },
+    {
+      "id": "F02",
+      "area": "frontend",
+      "title": "Composer, drag and attachment presentation",
+      "status": "MIGRATING",
+      "owner": "product/current/frontend",
+      "sourcePaths": ["packages/client/ui-conversation", "packages/client/ui-attachment"],
+      "upstreamDependency": "Use conversation Composer and attachment Slots; model-visible content remains a Host contract.",
+      "updateRule": "Keep renderer presentation separate from durable attachment admission and serialization.",
+      "verify": "product/checks/validate-product-index.mjs"
+    },
+    {
+      "id": "F03",
+      "area": "frontend",
+      "title": "Sidebar policy and Codex-like layout",
+      "status": "EXTENSION_REQUIRED",
+      "owner": "product/current/frontend",
+      "sourcePaths": ["packages/client/ui-layout"],
+      "upstreamDependency": "The official layout owns breakpoint policy; a stable policy extension point is required.",
+      "updateRule": "Do not maintain a DOM or CSS selector override for sidebar state.",
+      "verify": "product/checks/verify-upstream-clean.mjs"
+    },
+    {
+      "id": "B01",
+      "area": "backend",
+      "title": "Durable file attachment contract",
+      "status": "EXTENSION_REQUIRED",
+      "owner": "product/current/backend",
+      "sourcePaths": ["packages/attachment", "packages/host", "packages/api"],
+      "upstreamDependency": "The official content and session contracts currently center on image attachments.",
+      "updateRule": "Keep generic files behind a typed Host/API contract; never implement model-visible file input in the renderer alone.",
+      "verify": "product/checks/validate-product-index.mjs"
+    },
+    {
+      "id": "B02",
+      "area": "backend",
+      "title": "Profile patch and plugin loading",
+      "status": "MIGRATING",
+      "owner": "product/current/patch",
+      "sourcePaths": ["packages/bundle/web-app", "apps/cli"],
+      "upstreamDependency": "Use public profile overlays and dsh.client module discovery.",
+      "updateRule": "Carry only product rows in the product patch; keep official bundle rows unchanged.",
+      "verify": "product/checks/verify-upstream-clean.mjs"
+    },
+    {
+      "id": "S01",
+      "area": "shared",
+      "title": "Electron preload bridge contracts",
+      "status": "MIGRATING",
+      "owner": "product/current/shared",
+      "sourcePaths": ["apps/desktop/src/bridge.ts"],
+      "upstreamDependency": "Renderer and Electron main communicate only through the typed preload bridge.",
+      "updateRule": "Version bridge messages with the product release and verify both faces together.",
+      "verify": "product/checks/release-lock.mjs"
+    },
+    {
+      "id": "R01",
+      "area": "build",
+      "title": "Git-bound build, release lock, and retention",
+      "status": "ACTIVE",
+      "owner": "product/checks",
+      "sourcePaths": ["apps/desktop/package.json", "product/manifests"],
+      "upstreamDependency": "Release identity is the pair of product and upstream Git trees.",
+      "updateRule": "A release requires clean worktrees, a version manifest, artifact hashes, and a retained version directory.",
+      "verify": "product/build/build-desktop-release.mjs"
+    }
+  ]
+}
