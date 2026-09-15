@@ -38,6 +38,16 @@ jobs:
   publish:
     runs-on: windows-latest
     steps:
+      # The product overlay manifest pins byte-level SHA-256 digests of the
+      # overlay sources; Windows runners default to core.autocrlf=true, which
+      # would rewrite LF to CRLF on checkout and break those digests. Turn the
+      # conversion off before anything is checked out.
+      - name: Disable line-ending conversion
+        shell: bash
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
       - name: Checkout product tree
         uses: actions/checkout@v5
         with:
