@@ -1,0 +1,31 @@
+{
+  "schema": "dsh.source-policy.v1",
+  "officialSource": {
+    "path": "upstream",
+    "editPolicy": "deny-by-default",
+    "mustRemainClean": true,
+    "approvalRequired": true
+  },
+  "allowedProductPlanes": [
+    "product/app/frontend/source",
+    "product/app/desktop",
+    "product/config",
+    "product/docs",
+    "product/tools",
+    "plugins"
+  ],
+  "frontendOverlay": {
+    "manifest": "product/config/overlay-manifest.json",
+    "sourceRoot": "product/app/frontend/source",
+    "targetRoots": [
+      "apps/web/",
+      "packages/client/"
+    ],
+    "mergePolicy": "three-way",
+    "conflictPolicy": "ours-and-report"
+  },
+  "directSourceExceptions": {
+    "registry": "product/config/source-exceptions.json",
+    "approvalField": "approvedByUser"
+  }
+}

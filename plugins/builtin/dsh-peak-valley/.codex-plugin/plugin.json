@@ -1,0 +1,15 @@
+{
+  "name": "dsh-peak-valley",
+  "version": "0.1.0",
+  "description": "峰谷时段显示与实时 24 小时进度条。",
+  "author": { "name": "Local developer" },
+  "interface": {
+    "displayName": "Dsh Peak Valley",
+    "shortDescription": "只显示峰段、谷段和当前时间进度。",
+    "longDescription": "独立的峰谷插件，在设置中提供峰段与谷段时间说明、当前时段状态和实时 24 小时进度条，不显示费用合计。",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": ["peak period display", "valley period display", "live time progress"],
+    "defaultPrompt": "显示峰谷时间进度。"
+  }
+}

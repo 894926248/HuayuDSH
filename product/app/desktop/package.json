@@ -1,0 +1,104 @@
+{
+  "name": "@deepseek-ai/dsh-desktop",
+  "description": "Electron desktop shell for the DeepSeek Harness Web application",
+  "version": "0.1.0-rc.8",
+  "private": true,
+  "type": "module",
+  "main": "lib/bundle/main.js",
+  "author": "DeepSeek",
+  "scripts": {
+    "build": "tsc -b && tsdown",
+    "dev": "electron .",
+    "stage-host": "node scripts/runtime-host.mjs stage",
+    "verify-host": "node scripts/runtime-host.mjs verify",
+    "repair-shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/repair-shortcut.ps1",
+    "package": "pnpm run stage-host && electron-builder --dir && node scripts/runtime-host.mjs verify --unpacked ../../../.workspace/artifacts/staging/desktop/win-unpacked",
+    "dist": "pnpm run stage-host && electron-builder && node scripts/runtime-host.mjs verify --unpacked ../../../.workspace/artifacts/staging/desktop/win-unpacked"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^6.0.3"
+  },
+  "build": {
+    "appId": "ai.deepseek.harness",
+    "productName": "DeepSeek Harness",
+    "executableName": "DeepSeek Harness",
+    "artifactName": "DeepSeek Harness.${ext}",
+    "directories": {
+      "output": "../../../.workspace/artifacts/staging/desktop"
+    },
+    "files": [
+      "lib/bundle/**/*",
+      "package.json"
+    ],
+    "icon": "build/icon.ico",
+    "compression": "store",
+    "disableDefaultIgnoredFiles": true,
+    "extraResources": [
+      {
+        "from": "../../../.workspace/artifacts/staging/runtime",
+        "to": "runtime",
+        "filter": [
+          "**/*",
+          "!**/.git",
+          "!**/.git/**",
+          "!**/CLAUDE.md",
+          "!examples",
+          "!examples/**",
+          "!docs",
+          "!docs/**",
+          "!website",
+          "!website/**",
+          "!**/tests",
+          "!**/tests/**",
+          "!**/*.spec.*",
+          "!**/*.test.*",
+          "!hermes-recovery",
+          "!hermes-recovery/**"
+        ]
+      },
+      {
+        "from": "../../../.workspace/artifacts/staging/runtime/node_modules",
+        "to": "runtime/node_modules",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "build/host-root.json",
+        "to": "host-root.json"
+      },
+      {
+        "from": "build/icon-light.png",
+        "to": "icons/icon-light.png"
+      },
+      {
+        "from": "build/icon-dark.png",
+        "to": "icons/icon-dark.png"
+      },
+      {
+        "from": "../../../product/config/product-version.json",
+        "to": "product-version.json"
+      },
+      {
+        "from": "../../../product/config/runtime-recovery.patch.yml",
+        "to": "runtime-recovery.patch.yml"
+      },
+      {
+        "from": "../../../plugins/dsh-peak-valley",
+        "to": "runtime/node_modules/dsh-peak-valley",
+        "filter": ["**/*"]
+      }
+    ],
+    "asar": false,
+    "npmRebuild": false,
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "DeepSeek Harness.${ext}"
+    }
+  }
+}

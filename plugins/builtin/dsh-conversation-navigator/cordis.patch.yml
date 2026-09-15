@@ -1,0 +1,4 @@
+# dsh-conversation-navigator bundle layer.
+- insert:
+    - id: conversation-navigator
+      name: dsh-conversation-navigator

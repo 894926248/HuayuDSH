@@ -1,0 +1,75 @@
+{
+  "schema": "dsh.plugin-registry.v1",
+  "projectRoot": "C:/Users/89492/Desktop/deepseek-harness",
+  "plugins": [
+    {
+      "id": "dsh-market",
+      "path": "plugins/dsh-market",
+      "kind": "git-submodule",
+      "repository": "https://github.com/dsh-market/dsh-market.git",
+      "commit": "3188f465779d25dc2d41f53cdf21334bef517ac3"
+    },
+    {
+      "id": "dsh-conversation-navigator",
+      "path": "plugins/builtin/dsh-conversation-navigator",
+      "kind": "product-local",
+      "entry": "lib/index.js",
+      "clientEntry": "lib/client.js"
+    },
+    {
+      "id": "dsh-model-settings",
+      "path": "plugins/builtin/dsh-model-settings",
+      "kind": "product-local",
+      "entry": "lib/index.js",
+      "clientEntry": "lib/client.js"
+    },
+    {
+      "id": "dsh-commandcode-provider",
+      "path": "plugins/builtin/dsh-commandcode-provider",
+      "kind": "product-local",
+      "entry": "lib/index.js"
+    },
+    {
+      "id": "dsh-peak-valley",
+      "path": "plugins/builtin/dsh-peak-valley",
+      "kind": "product-local",
+      "entry": "lib/index.js",
+      "clientEntry": "lib/client.js"
+    },
+    {
+      "id": "dsh-workspace-performance",
+      "path": "plugins/builtin/dsh-workspace-performance",
+      "kind": "product-local",
+      "entry": "lib/index.js",
+      "clientEntry": "lib/client.js"
+    },
+    {
+      "id": "dsh-ui-tweaks",
+      "path": "plugins/builtin/dsh-ui-tweaks",
+      "kind": "product-local",
+      "entry": "lib/index.js",
+      "clientEntry": "lib/client.js"
+    },
+    {
+      "id": "dsh-message-edit",
+      "path": "plugins/builtin/dsh-message-edit",
+      "kind": "product-local",
+      "entry": "lib/index.js",
+      "clientEntry": "lib/client.js"
+    },
+    {
+      "id": "dsh-model-select-enhanced",
+      "path": "plugins/builtin/dsh-model-select-enhanced",
+      "kind": "product-local",
+      "entry": "lib/index.js",
+      "clientEntry": "lib/client.js"
+    },
+    {
+      "id": "dsh-builtin-plugins",
+      "path": "plugins/builtin/dsh-builtin-plugins",
+      "kind": "product-local",
+      "entry": "lib/index.js",
+      "clientEntry": "lib/client.js"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "dsh.product-overlay-manifest.v3",
+  "sourceCommit": "b150a551b8d465e31e418e1b2eaf5e79bbb7d28e",
+  "backendPolicy": "upstream-only",
+  "files": [
+    {
+      "layer": "frontend",
+      "path": "apps/web/src/css.d.ts",
+      "sha256": "8d1be27255125eefee51e3bfc0f82c8ff6ab38a218aa3d9a02ef8001c3da04ed"
+    },
+    {
+      "layer": "frontend",
+      "path": "apps/web/src/desktop-chrome.css",
+      "sha256": "712c005f0f69ca6a870f5c64a0f86e37a368d68e1fe35bb38b424e2cea357d11"
+    },
+    {
+      "layer": "frontend",
+      "path": "apps/web/src/desktop-chrome.ts",
+      "sha256": "7994e01c69ced1be6f49a7bdf1645a69a3a51b3bf829b95b8f8b147dc582d8d3"
+    },
+    {
+      "layer": "frontend",
+      "path": "apps/web/src/main.ts",
+      "sha256": "2a1ce09766c6d0a42aa91ad65330b14dac16abfaa8cf8ac7aec2ab21eb904c49"
+    }
+  ],
+  "merge": {
+    "baseCommit": "b150a551b8d465e31e418e1b2eaf5e79bbb7d28e",
+    "conflictPolicy": "ours-and-report",
+    "conflicts": []
+  }
+}

@@ -1,0 +1,75 @@
+# Product built-in runtime policy loaded as a final profile overlay.
+- id: llm-pi-ai
+  config:
+    providers:
+      opencode-go:
+        streamIdleTimeoutMs: 300000
+        retryPolicy:
+          mode: normal
+          maxRetries: 3
+          retryableCodes:
+            - EMPTY_RESPONSE
+            - RATE_LIMIT
+            - SERVER
+            - TIMEOUT
+            - TRANSPORT
+          backoff:
+            initialDelayMs: 500
+            maxDelayMs: 10000
+            jitterRatio: 0.1
+
+# Apply the same terminal policy to the native DeepSeek adapter.
+- id: llm-deepseek
+  config:
+    streamIdleTimeoutMs: 300000
+    retryPolicy:
+      mode: normal
+      maxRetries: 3
+      retryableCodes:
+        - EMPTY_RESPONSE
+        - RATE_LIMIT
+        - SERVER
+        - TIMEOUT
+        - TRANSPORT
+      backoff:
+        initialDelayMs: 500
+        maxDelayMs: 10000
+        jitterRatio: 0.1
+
+# Product internal plugins (builtin directory; registry-driven staging).
+- insert:
+    - id: dsh-model-select-enhanced
+      name: dsh-model-select-enhanced
+
+- insert:
+    - id: dsh-workspace-performance
+      name: dsh-workspace-performance
+
+- insert:
+    - id: dsh-ui-tweaks
+      name: dsh-ui-tweaks
+
+- insert:
+    - id: dsh-message-edit
+      name: dsh-message-edit
+
+- insert:
+    - id: dsh-peak-valley
+      name: dsh-peak-valley
+
+- insert:
+    - id: dsh-conversation-navigator
+      name: dsh-conversation-navigator
+
+- insert:
+    - id: dsh-model-settings
+      name: dsh-model-settings
+
+- insert:
+    - id: dsh-commandcode-provider
+      name: dsh-commandcode-provider
+
+# Built-in plugin manager: Settings → 内置插件 (switch list, versions, why).
+- insert:
+    - id: dsh-builtin-plugins
+      name: dsh-builtin-plugins

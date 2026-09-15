@@ -1,0 +1,8 @@
+# Generic model settings bundle layer.
+# The stock Models page is disabled, then replaced by the same settings section
+# implemented as an independently updateable plugin.
+- id: ui-settings-models
+  disabled: true
+- insert:
+    - id: dsh-model-settings
+      name: dsh-model-settings

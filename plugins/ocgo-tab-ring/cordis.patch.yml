@@ -1,0 +1,5 @@
+# ocgo-tab-ring bundle layer
+- insert:
+    - id: ocgo-tab-ring
+      name: ocgo-tab-ring
+      inject: ['webServer', 'credentials', 'settings']

@@ -1,0 +1,7 @@
+# Built-in Command Code provider. Its only visible surface is the generic
+# Models page supplied by dsh-model-settings.
+- insert:
+    - id: llm-commandcode
+      name: dsh-commandcode-provider
+      config:
+        apiKeyEnv: COMMANDCODE_API_KEY

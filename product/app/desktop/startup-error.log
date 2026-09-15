@@ -1,0 +1,6 @@
+Error: desktop: official Web profile exited before readiness (code null, signal SIGTERM)
+(node:57436) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+    at DshHost.waitForAnnouncedUrl (file:///C:/Users/89492/Desktop/deepseek-harness/product/app/desktop/lib/bundle/main.js:1054:11)
+    at async DshHost.start (file:///C:/Users/89492/Desktop/deepseek-harness/product/app/desktop/lib/bundle/main.js:1023:16)
+    at async restartHostForPluginChange (file:///C:/Users/89492/Desktop/deepseek-harness/product/app/desktop/lib/bundle/main.js:1439:13)

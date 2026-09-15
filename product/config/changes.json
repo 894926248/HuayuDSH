@@ -1,0 +1,823 @@
+{
+  "schema": "dsh.product-index.v1",
+  "project": "deepseek-harness",
+  "updatedAt": "2026-09-02T10:07:54.800Z",
+  "areas": [
+    {
+      "id": "frontend",
+      "name": "Browser client"
+    },
+    {
+      "id": "backend",
+      "name": "Host and API"
+    },
+    {
+      "id": "desktop",
+      "name": "Electron shell"
+    },
+    {
+      "id": "shared",
+      "name": "Shared contracts"
+    },
+    {
+      "id": "build",
+      "name": "Build and release"
+    }
+  ],
+  "changes": [
+    {
+      "id": "D01",
+      "area": "desktop",
+      "title": "Electron shell and native identity",
+      "status": "ACTIVE",
+      "owner": "product/app/desktop",
+      "sourcePaths": [
+        "product/app/desktop"
+      ],
+      "upstreamDependency": "The shell mounts the unmodified official Web profile from the packaged runtime closure.",
+      "updateRule": "Keep native window behavior in the product shell and rebuild the complete official runtime plus frontend overlay before packaging.",
+      "verify": "product/tools/build-desktop-release.mjs"
+    },
+    {
+      "id": "D02",
+      "area": "desktop",
+      "title": "Titlebar version selector and portable release switching",
+      "status": "ACTIVE",
+      "owner": "product/app/desktop",
+      "sourcePaths": [
+        "product/app/desktop",
+        "product/app/frontend/source/apps/web/src/desktop-chrome.ts",
+        "product/app/frontend/source/apps/web/src/desktop-chrome.css"
+      ],
+      "upstreamDependency": "The selector launches only complete product release executables; the selected executable still owns the official upstream runtime closure.",
+      "updateRule": "Keep version discovery, download, and relaunch in the shell; keep the WebUI change limited to the indexed titlebar overlay.",
+      "verify": "product/tools/build-desktop-release.mjs"
+    },
+    {
+      "id": "F01",
+      "area": "frontend",
+      "title": "Desktop chrome and outer frame",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend",
+      "sourcePaths": [
+        "product/app/frontend/source/apps/web/src/css.d.ts",
+        "product/app/frontend/source/apps/web/src/desktop-chrome.ts",
+        "product/app/frontend/source/apps/web/src/desktop-chrome.css",
+        "product/app/frontend/source/apps/web/src/main.ts"
+      ],
+      "upstreamDependency": "The indexed frontend files are copied over the selected official Git-tagged Web entry only in a disposable build worktree.",
+      "updateRule": "Select an official upstream tag, regenerate the frontend overlay, and require every indexed hash to match before building.",
+      "verify": "product/tools/verify-product-source.mjs"
+    },
+    {
+      "id": "F02",
+      "area": "frontend",
+      "title": "Composer, file drag, message actions, and model settings",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend",
+      "sourcePaths": [
+        "product/app/frontend/source/packages/client"
+      ],
+      "upstreamDependency": "The product frontend is compiled together with the official client module table and Host contracts from the selected upstream gitlink.",
+      "updateRule": "Keep presentation changes in the indexed frontend overlay; never edit the pinned upstream worktree during a port.",
+      "verify": "product/tools/verify-product-source.mjs"
+    },
+    {
+      "id": "F03",
+      "area": "frontend",
+      "title": "Sidebar policy and Codex-like layout",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend",
+      "sourcePaths": [
+        "product/app/frontend/source/packages/client/ui-layout"
+      ],
+      "upstreamDependency": "The indexed layout files replace only the corresponding presentation files in the temporary source tree.",
+      "updateRule": "A changed upstream layout surface must fail hash validation and be ported explicitly.",
+      "verify": "product/tools/verify-product-source.mjs"
+    },
+    {
+      "id": "F04",
+      "area": "frontend",
+      "title": "Peak-valley plugin with live time progress",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-peak-valley",
+      "sourcePaths": [
+        "plugins/builtin/dsh-peak-valley"
+      ],
+      "upstreamDependency": "The plugin registers a browser settings section through the official settings slot contract.",
+      "updateRule": "Keep peak and valley period presentation in the standalone plugin; update its slot registration if the official settings contract changes.",
+      "verify": "node --check plugins/dsh-peak-valley/lib/index.js && node --check plugins/dsh-peak-valley/lib/client.js"
+    },
+    {
+      "id": "P04",
+      "area": "backend",
+      "title": "In-process Harness recovery and bounded provider retries",
+      "status": "ACTIVE",
+      "owner": "product/config",
+      "sourcePaths": [
+        "product/config/runtime-recovery.patch.yml",
+        "product/app/desktop/src/main.ts",
+        "product/app/desktop/src/harness-recovery",
+        "product/app/desktop/scripts/runtime-host.mjs",
+        "product/app/desktop/package.json",
+        "product/tools/build-desktop-release.mjs",
+        "product/tools/build-desktop-unpacked.mjs",
+        "product/tools/install-desktop.mjs"
+      ],
+      "upstreamDependency": "The official DSH Host, session history, mux events, providers, and session.prompt RPC remain authoritative; the desktop shell owns only the recovery coordinator and its product state.",
+      "updateRule": "Keep recovery in the Electron main process. Recover only a durable turn/start without a later turn/end, enqueue at most one product recovery message for that boundary, and never turn a terminal provider error into another prompt. Provider retry policies stay finite and explicit.",
+      "verify": "pnpm run product:guard && pnpm run product:validate && node --check product/tools/build-desktop-release.mjs"
+    },
+    {
+      "id": "R03",
+      "area": "build",
+      "title": "Windows package-script invocation",
+      "status": "ACTIVE",
+      "owner": "product/tools",
+      "sourcePaths": [
+        "product/tools/build-desktop-unpacked.mjs",
+        "product/tools/build-desktop-portable.mjs",
+        "product/tools/build-web.mjs"
+      ],
+      "upstreamDependency": "Build scripts invoke the package manager through the Windows command interpreter when running on Windows.",
+      "updateRule": "Keep Windows and POSIX child-process invocation paths explicit; package commands must produce a real exit status before artifact verification.",
+      "verify": "pnpm run product:guard && node --check product/tools/build-desktop-unpacked.mjs && node --check product/tools/build-desktop-portable.mjs && node --check product/tools/build-web.mjs"
+    },
+    {
+      "id": "R04",
+      "area": "build",
+      "title": "Fast desktop refresh plugin propagation",
+      "status": "ACTIVE",
+      "owner": "product/tools",
+      "sourcePaths": [
+        "product/tools/build-desktop-release.mjs"
+      ],
+      "upstreamDependency": "The fast path refreshes only disposable staged runtime content and must keep product plugin copies aligned with it.",
+      "updateRule": "Every product plugin consumed by the packaged composition must be included in the fast refresh copy set; never launch a stale plugin tree.",
+      "verify": "pnpm run product:guard && pnpm run product:validate"
+    },
+    {
+      "id": "R05",
+      "area": "build",
+      "title": "Verified NSIS installer and installed-target propagation",
+      "status": "ACTIVE",
+      "owner": "product/tools",
+      "sourcePaths": [
+        "AGENTS.md",
+        "product/tools/build-desktop-installer.mjs",
+        "product/tools/install-desktop.mjs"
+      ],
+      "upstreamDependency": "The installed target is created only by the NSIS installer generated from the verified unpacked desktop package; no generated artifact is copied into the installed directory.",
+      "updateRule": "When the current shortcut points to the installed state, run product:desktop:install. Require installer-build-result.json before installation and installed-build-result.json after installation, including critical runtime hashes and the shortcut target.",
+      "verify": "pnpm run product:guard && pnpm run product:validate && node --check product/tools/build-desktop-installer.mjs && node --check product/tools/install-desktop.mjs"
+    },
+    {
+      "id": "F05",
+      "area": "frontend",
+      "title": "Surface original provider failure diagnostics",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend",
+      "sourcePaths": [],
+      "upstreamDependency": "The indexed runtime failure-display overlay replaces the official client projection of durable failure copy; the durable session log remains the authoritative source.",
+      "updateRule": "Keep the change inside the indexed WebUI overlay; never edit the upstream runtime package directly.",
+      "verify": "pnpm run product:guard && node product/tools/verify-product-source.mjs"
+    },
+    {
+      "id": "P02",
+      "area": "frontend",
+      "title": "Generic model settings plugin for every provider",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-model-settings",
+      "sourcePaths": [
+        "plugins/builtin/dsh-model-settings"
+      ],
+      "upstreamDependency": "The plugin mirrors the official Models page UI while using only the official settings, credentials, provider-directory, and model-discovery contracts.",
+      "updateRule": "Keep the stock Models section disabled and update this independently packaged plugin when the upstream Models page contracts change; settings.yaml remains the only model selection source.",
+      "verify": "node --check plugins/dsh-model-settings/lib/index.js && node --check plugins/dsh-model-settings/lib/client.js"
+    },
+    {
+      "id": "P03",
+      "area": "backend",
+      "title": "Built-in Command Code provider",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-commandcode-provider",
+      "sourcePaths": [
+        "plugins/builtin/dsh-commandcode-provider"
+      ],
+      "upstreamDependency": "The provider implementation is product-local and uses the official LLM, credentials, settings, attachment, command, and Typert contracts.",
+      "updateRule": "Keep Command Code in the generic Models settings surface; do not reintroduce the external package or a dedicated provider settings page.",
+      "verify": "node --check plugins/dsh-commandcode-provider/lib/index.js"
+    },
+    {
+      "id": "P01",
+      "area": "frontend",
+      "title": "Codex-style conversation node navigator plugin",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-conversation-navigator",
+      "sourcePaths": [
+        "plugins/builtin/dsh-conversation-navigator",
+        "product/tools/validate-product-index.mjs"
+      ],
+      "upstreamDependency": "The plugin consumes the official client slot, session projection, and conversation scroll anchors through their public plugin contracts.",
+      "updateRule": "Keep the navigator in its own dual-face plugin; do not move its browser code into the official WebUI overlay or edit upstream ChatView.",
+      "verify": "node --check plugins/dsh-conversation-navigator/lib/index.js && node --check plugins/dsh-conversation-navigator/lib/client.js"
+    },
+    {
+      "id": "B01",
+      "area": "backend",
+      "title": "Durable file attachment and RPC contracts",
+      "status": "ACTIVE",
+      "owner": "upstream",
+      "sourcePaths": [],
+      "upstreamDependency": "Model-visible files and durable session data use the official Host/API implementation.",
+      "updateRule": "Keep the backend source plane empty; update the upstream lock and rebuild the official runtime when upstream changes.",
+      "verify": "product/tools/verify-product-source.mjs"
+    },
+    {
+      "id": "B02",
+      "area": "backend",
+      "title": "Profile composition and provider behavior",
+      "status": "ACTIVE",
+      "owner": "upstream",
+      "sourcePaths": [],
+      "upstreamDependency": "The product mounts the official profile layers from the selected upstream Git tag.",
+      "updateRule": "Do not hand-edit or overlay the official profile; select the required upstream tag and rerun the complete source and runtime checks.",
+      "verify": "product/tools/verify-product-source.mjs"
+    },
+    {
+      "id": "S01",
+      "area": "shared",
+      "title": "Electron preload bridge and cross-face contracts",
+      "status": "ACTIVE",
+      "owner": "product/app/desktop",
+      "sourcePaths": [
+        "product/app/desktop/src/bridge.ts"
+      ],
+      "upstreamDependency": "Renderer and Electron main communicate through the product-owned typed bridge.",
+      "updateRule": "Version bridge changes with the product release and build Host, Client, and desktop faces together.",
+      "verify": "product/tools/release-lock.mjs"
+    },
+    {
+      "id": "R01",
+      "area": "build",
+      "title": "Clean upstream composition, Git lock, and artifact retention",
+      "status": "ACTIVE",
+      "owner": "product/tools",
+      "sourcePaths": [
+        "product/tools"
+      ],
+      "upstreamDependency": "A release is the product Git tree and official upstream gitlink plus the indexed frontend files.",
+      "updateRule": "A tag/package mismatch, dirty upstream tree, missing source input, unsupported backend overlay, or artifact hash mismatch stops the release.",
+      "verify": "product/tools/build-desktop-release.mjs"
+    },
+    {
+      "id": "M01",
+      "area": "backend",
+      "title": "Universal model catalog (single master table per modelId)",
+      "status": "ACTIVE",
+      "owner": "product/config",
+      "sourcePaths": [
+        "product/config/model-catalog.json",
+        "product/tools/sync-model-catalog.mjs"
+      ],
+      "upstreamDependency": "Upstream is https://models.dev/api.json + pi-ai builtin + https://api.commandcode.ai/provider/v1/models; local fallback is product/config/model-catalog.json. Providers match against this single table per modelId (generic reasoningEfforts).",
+      "updateRule": "Run node product/tools/sync-model-catalog.mjs --pull to refresh from upstream; do not hand-edit per-provider model tables — edit the master table only. reasoningEfforts is generic per modelId (off/low/medium/high/xhigh/max or off/high/max for deepseek).",
+      "verify": "node product/tools/sync-model-catalog.mjs --check"
+    },
+    {
+      "id": "F06",
+      "area": "frontend",
+      "title": "Built-in user message 回头编辑 (inline edit to composer)",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend",
+      "sourcePaths": [],
+      "upstreamDependency": "Reuses the composer's draft via the session input standard kit and the editSurface CSS contract already in the overlay; upstream dropped the stub in 2026-07-31 with no host branch semantics, so edited text is copied to the composer for resend (append-only log).",
+      "updateRule": "Keep the edit affordance inside the overlay; do not edit upstream directly. The inline editor hides bubbleContent via :has([data-message-editing]) and hides actions via .userRow:has(...) > .actions.",
+      "verify": "pnpm run product:guard && node product/tools/verify-product-source.mjs"
+    },
+    {
+      "id": "R02",
+      "area": "build",
+      "title": "Deny-by-default official source gate and UI merge policy",
+      "status": "ACTIVE",
+      "owner": "product/tools",
+      "sourcePaths": [
+        "product/tools/verify-source-policy.mjs",
+        "product/tools/rebuild-frontend-overlay.mjs",
+        "product/config/source-policy.json",
+        "product/config/source-exceptions.json"
+      ],
+      "upstreamDependency": "The selected upstream gitlink is the only source of Host, API, provider, workflow, persistence, and worker behavior.",
+      "updateRule": "Reject dirty official source and non-WebUI overlays; sync UI changes with a three-way merge and preserve product hunks on conflicts only after the source policy is satisfied.",
+      "verify": "product/tools/verify-source-policy.mjs"
+    },
+    {
+      "id": "R07",
+      "area": "desktop",
+      "title": "Turn-error diagnostic expander (product overlay)",
+      "status": "ACTIVE",
+      "owner": "product/app/desktop",
+      "sourcePaths": [
+        "product/app/desktop/src/error-capture.ts",
+        "product/app/desktop/src/main.ts",
+        "product/app/desktop/src/bridge.ts",
+        "product/app/desktop/src/preload.ts"
+      ],
+      "upstreamDependency": "Upstream collapses turn-error reasons to one-line `message + code`; nothing changes there. This rule layers a desktop capture so the renderer can read the host's original stderr stream verbatim.",
+      "updateRule": "The desktop shell owns `last-errors.json` (capped at 100 entries) under userData/diagnostics; the renderer pulls `dsh:get-last-errors` on first expansion and subscribes for live updates. Never store credentials or full session content; only stderr/stdout lines the host already emits.",
+      "verify": "pnpm run product:guard && pnpm run product:validate && pnpm run product:source-check && node product/tools/rebuild-frontend-overlay.mjs && node --check product/app/desktop/src/error-capture.ts"
+    },
+    {
+      "id": "R06",
+      "area": "build",
+      "title": "Agent constitution and layered rule manuals",
+      "status": "ACTIVE",
+      "owner": "product/docs",
+      "sourcePaths": [
+        "AGENTS.md",
+        "product/AGENTS.md",
+        "product/README.md",
+        "product/docs/agent/update-chain.md",
+        "product/docs/agent/state-map.md",
+        "product/docs/agent/evidence.md",
+        "product/config/source-policy.json",
+        "product/tools/verify-repository-layout.mjs"
+      ],
+      "upstreamDependency": "The rule layering changes no upstream authority; the manuals only restate how product artifacts are built, judged, and verified.",
+      "updateRule": "Keep the root AGENTS.md as a short constitution: evidence gate, write boundaries, state labels, update modes, idempotency, conflict arbitration, and trigger clauses. Long procedures stay in product/docs/agent and load only through those clauses; keep every manual under 80 lines and never move hard constraints out of the constitution.",
+      "verify": "pnpm run product:guard && pnpm run product:validate && pnpm run product:source-check && node --check product/tools/verify-repository-layout.mjs"
+    },
+    {
+      "id": "R08",
+      "area": "frontend",
+      "title": "ContextInjectionRow popover (product overlay)",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source",
+      "sourcePaths": [],
+      "upstreamDependency": "Upstream DisclosureRow renders the expanded body inline below the row (flow layout). Nothing changes there; this rule overlays ContextInjectionRow so the body opens as a fixed popover above the row (flipping below when space is short), leaving the message flow untouched.",
+      "updateRule": "Popover is portaled to document.body with fixed coordinates measured from the anchor rect; outside mousedown, Escape, and viewport scroll/resize close or reposition it. Rebuild ui-conversation lib and restart the desktop shell to apply.",
+      "verify": "pnpm run product:guard && node product/tools/rebuild-frontend-overlay.mjs && pnpm run product:source-check"
+    },
+    {
+      "id": "R09",
+      "area": "frontend",
+      "title": "WorkspaceBrowser virtualized session list + memoized rows (product overlay)",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source",
+      "sourcePaths": [],
+      "upstreamDependency": "Upstream WorkspaceBrowser renders every session row (each carrying a portal Menu, HoverCard and drag handlers) on every interaction; with 100+ sessions the sidebar re-renders and re-animates all of them and feels frozen. This rule overlays a fixed-height (32px) virtualized flat list with overscan and memoizes SessionNodeItem with mount animation disabled; upstream render semantics stay untouched.",
+      "updateRule": "Rows stay fixed at ROW_HEIGHT=32 with ROW_OVERSCAN=12; after editing, run product:frontend-sync then rebuild the desktop shell. Keep the two files in lockstep: memoized rows are what make virtualization cheap.",
+      "verify": "pnpm run product:guard && node product/tools/rebuild-frontend-overlay.mjs && pnpm run product:source-check"
+    },
+    {
+      "id": "R10",
+      "area": "frontend",
+      "title": "dsh-peak-valley clock throttled from rAF to 1s (perf fix)",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-peak-valley",
+      "sourcePaths": [
+        "plugins/builtin/dsh-peak-valley/lib/client.js",
+        "plugins/builtin/dsh-peak-valley/lib/client-bundle.js"
+      ],
+      "upstreamDependency": "Upstream has no peak-valley plugin; this is a product plugin. The footer/section clock used requestAnimationFrame to setState every frame (60fps), re-rendering both components and executing Intl.DateTimeFormat.formatToParts each time, keeping the renderer main thread saturated and freezing the whole client.",
+      "updateRule": "Keep the clock at 1s granularity (setTimeout 1000ms); the progress bar already has CSS transitions for smooth movement. If the bundle needs rebuilding, apply the same change to both lib/client.js and lib/client-bundle.js.",
+      "verify": "pnpm run product:guard && node product/tools/rebuild-frontend-overlay.mjs && pnpm run product:source-check"
+    },
+    {
+      "id": "R11",
+      "area": "frontend",
+      "title": "ChatNodeSeat viewport-gated mounting (long conversation perf)",
+      "status": "DROPPED",
+      "owner": "product/app/frontend/source/packages/client/ui-conversation",
+      "sourcePaths": [],
+      "upstreamDependency": "Upstream ChatView maps every chat Node at once. Long sessions (largest is a 19MB compressed log, thousands of Nodes) mount all rows on open, blocking the renderer during session switches and Node jumps. Product gates each seat on IntersectionObserver proximity (1400px margin), mounts once and keeps mounted, and caches measured heights so the scroller stays stable.",
+      "updateRule": "ChatNodeSeat 窗口化已撤销（R11），无构建影响",
+      "verify": "pnpm run product:guard && node product/tools/rebuild-frontend-overlay.mjs && pnpm run product:source-check",
+      "revertedAt": "2026-08-29T15:23:00.248Z",
+      "revertReason": "Overlay target覆盖上游ui-conversation包，用户明确不批准覆盖上游文件，撤销"
+    },
+    {
+      "id": "R12",
+      "area": "shared",
+      "title": "索引规范化：tasks.json 功能索引 + indexing.md 规范 + 根目录清理",
+      "status": "ACTIVE",
+      "owner": "product/config",
+      "sourcePaths": [
+        "product/config/tasks.json",
+        "product/docs/agent/indexing.md"
+      ],
+      "upstreamDependency": "无。不触碰 upstream。清理根目录违规文件（_tmp_*/hash_compare*/startup-error.log/.dsh-vision-router）归档至 .workspace/diagnostics/root-cleanup-20260901/",
+      "updateRule": "索引维护按 indexing.md 执行；后续所有任务/变更/批准登记遵循该规范",
+      "verify": "product/config/tasks.json 校验 + git status 根目录无违规文件"
+    },
+    {
+      "id": "R13",
+      "area": "shared",
+      "title": "AGENTS.md House Rules 增加索引规范条款（引用 indexing.md）",
+      "status": "ACTIVE",
+      "owner": "product/docs/agent",
+      "sourcePaths": [
+        "AGENTS.md"
+      ],
+      "upstreamDependency": "无。规则性变更，不影响上游、不触发构建",
+      "updateRule": "House Rules 新增：任务/功能/变更/批准登记遵循 indexing.md；功能落地三选一（内部插件/官方 patch/壳），overlay 仅过渡目标清零",
+      "approvedBy": "user 2026-09-01 17:47 显式批准",
+      "verify": "product:guard（规则变更仅四项检查，不触发构建）"
+    },
+    {
+      "id": "R14",
+      "area": "shared",
+      "title": "官方插件开发文档入库 + 规范/规则指向",
+      "status": "ACTIVE",
+      "owner": "product/docs/plugins",
+      "sourcePaths": [
+        "product/docs/plugins",
+        "product/docs/agent/indexing.md",
+        "AGENTS.md"
+      ],
+      "upstreamDependency": "无（文档复制自 upstream/docs 只读目录，不改上游；AGENTS.md 指向修改用户 2026-09-01 批准）",
+      "updateRule": "插件开发/迁移前先读 product/docs/plugins/README.md；upstream 文档更新时同步替换本目录",
+      "verify": "find product/docs/plugins -name \"*.md\" | wc -l"
+    },
+    {
+      "id": "R15",
+      "area": "frontend",
+      "title": "dsh-workspace-performance：E01 会话列表虚拟化的插件化（content-visibility CSS）",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-workspace-performance",
+      "sourcePaths": [
+        "plugins/builtin/dsh-workspace-performance",
+        "plugins/registry.json"
+      ],
+      "upstreamDependency": "无。纯 client 插件：注入 content-visibility CSS 跳过离屏行渲染；不覆盖上游、不替换组件、零功能丢失。行高契约 32px（与已撤销的 E01 overlay 一致）",
+      "updateRule": "正式分发需把插件写入用户 profile bundles（dsh plugin add 或安装流程）；dev 验证用 runtime-recovery.patch.yml insert + profile junction",
+      "verify": "dump-config 出现 dsh-workspace-performance；实例运行时 style#dsh-workspace-performance-style 注入；侧边栏行 content-visibility: auto"
+    },
+    {
+      "id": "R16",
+      "area": "frontend",
+      "title": "dsh-turn-error-diagnostics：turn-error 节点显示完整原始错误（插件化）",
+      "status": "DROPPED",
+      "owner": "product/docs/agent",
+      "sourcePaths": [
+        "plugins/registry.json",
+        "product/config/runtime-recovery.patch.yml"
+      ],
+      "upstreamDependency": "无。经 ctx.conversationEvents.register 注册 turn-error definition（rawMessage/status/requestId/retryAfter），官方 cookbook 路径；上游源码 0 改动",
+      "updateRule": "conversationEvents.register 同名抛错不 shadow；功能放弃插件化，回退到上游默认 turn-error 行为",
+      "verify": "dump-config 加载（exit 0）；node --check 语法通过；错误会话中节点显示原始 provider 错误"
+    },
+    {
+      "id": "R17",
+      "area": "frontend",
+      "title": "dsh-ui-tweaks：独立 UI 样式定制插件化（消息操作 hover + 命令卡 sweep transform）",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-ui-tweaks",
+      "sourcePaths": [
+        "plugins/builtin/dsh-ui-tweaks",
+        "plugins/registry.json",
+        "product/config/runtime-recovery.patch.yml"
+      ],
+      "upstreamDependency": "无。纯 CSS 注入（data 属性选择器 + 全局 keyframes），上游 0 改动",
+      "verify": "dump-config 6 匹配（3 插件×2）；9357 实例自测：style#dsh-ui-tweaks-style 注入（800B，含 data-message-actions + dsh-command-row-sweep）",
+      "updateRule": "变更需经构建链生效（web-build/runtime 同步）；登记后由 evidence gate 验证"
+    },
+    {
+      "id": "R18",
+      "area": "frontend",
+      "title": "overlay 收敛：删除冗余 ContextMeter.module.css + ui-tweaks 追加 ReasoningRow keyframes",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source",
+      "sourcePaths": [
+        "plugins/builtin/dsh-ui-tweaks/lib/client.js"
+      ],
+      "upstreamDependency": "无。ContextMeter.module.css 与上游逐字节一致（冗余覆盖已删除）；ReasoningRow 的 sweep keyframes（dsh-reasoning-row-sweep）并入 ui-tweaks 插件",
+      "verify": "overlay-manifest 24→23；dump-config ui-tweaks 正常",
+      "updateRule": "变更需经构建链生效（web-build/runtime 同步）；登记后由 evidence gate 验证"
+    },
+    {
+      "id": "R19",
+      "area": "frontend",
+      "title": "dsh-turn-error-diagnostics 补全：turn-error 视图 shadow（rawMessage + 元数据 + 复制按钮）",
+      "status": "DROPPED",
+      "owner": "product/docs/agent",
+      "sourcePaths": [],
+      "upstreamDependency": "无。keyed slot 优先级 shadow；样式自带 dsh-te-*",
+      "verify": "9358 实例自测：style 注入 1291B；实例正常",
+      "updateRule": "conversationEvents.register 同名抛错不 shadow；功能放弃插件化，回退到上游默认 turn-error 行为"
+    },
+    {
+      "id": "R20",
+      "area": "frontend",
+      "title": "overlay 收敛：ChatView.module.css 删除（flowWindow 随 R11 撤销、navigatorSlot 由导航器插件自带样式）",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source",
+      "sourcePaths": [],
+      "upstreamDependency": "无。回上游原版（含新版 container-type）；导航器 rail 样式由 dsh-conversation-navigator 插件自带（.dsh-cn-rail）",
+      "verify": "overlay-manifest 23→22",
+      "updateRule": "变更需经构建链生效（web-build/runtime 同步）；登记后由 evidence gate 验证"
+    },
+    {
+      "id": "R21",
+      "area": "frontend",
+      "title": "dsh-message-edit：assistant-actions 编辑按钮 + DOM 回填 composer",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-message-edit",
+      "sourcePaths": [
+        "plugins/builtin/dsh-message-edit",
+        "plugins/registry.json",
+        "product/config/runtime-recovery.patch.yml"
+      ],
+      "upstreamDependency": "无。经官方 conversation.chat.assistant-actions list slot 注册；点击走 DOM（消息行文本→textarea 回填），不碰内部 API",
+      "verify": "dump-config 8 匹配（4 插件×2）；9359 实例自测 style 注入 365B",
+      "updateRule": "变更需经构建链生效（web-build/runtime 同步）；登记后由 evidence gate 验证"
+    },
+    {
+      "id": "R22",
+      "area": "frontend",
+      "title": "overlay 收敛：MessageItem.tsx/css、ReasoningRow/GenericCommandCard/MessageIconActions css、turn-error.ts、ContextMeter.tsx 删除（已插件化或决策放弃）",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source",
+      "sourcePaths": [],
+      "upstreamDependency": "无。功能已由插件承担（turn-error view、ui-tweaks、message-edit、assistant-actions）；user 消息编辑态（断链失效）一并清理",
+      "verify": "overlay-manifest 24→15",
+      "updateRule": "变更需经构建链生效（web-build/runtime 同步）；登记后由 evidence gate 验证"
+    },
+    {
+      "id": "R23",
+      "area": "frontend",
+      "title": "布局 F03 插件化：centerCol 背景 + 禁用窄屏(<1024)自动折叠（并入 dsh-ui-tweaks）；删除 4 个 ui-layout overlay",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-ui-tweaks",
+      "sourcePaths": [
+        "plugins/builtin/dsh-ui-tweaks/lib/client.js"
+      ],
+      "upstreamDependency": "无。纯 CSS 注入（sidebarCol/centerCol 子串选择器 + 1024 媒体查询）；data-conversation-drop-target 为死属性无消费者",
+      "verify": "9360 实例自测 uiTweaks 1363B 含布局规则",
+      "updateRule": "变更需经构建链生效（web-build/runtime 同步）；登记后由 evidence gate 验证"
+    },
+    {
+      "id": "R24",
+      "area": "frontend",
+      "title": "剩余 overlay 评估标记：InputBar css / failure-display / ContextInjectionRow / ModelSelect",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source",
+      "sourcePaths": [],
+      "upstreamDependency": "无。均为用户可见功能，不擅删；待用户对插件化/保留/放弃逐项决策",
+      "verify": "overlay-manifest 11 项",
+      "updateRule": "变更需经构建链生效（web-build/runtime 同步）；登记后由 evidence gate 验证"
+    },
+    {
+      "id": "R25",
+      "area": "frontend",
+      "title": "dsh-model-select-enhanced：composer 模型选择器插件化（目录分组+折叠+持久化，slot shadow）",
+      "status": "DROPPED",
+      "owner": "product/docs/agent",
+      "sourcePaths": [],
+      "upstreamDependency": "无。conversation.input.model slot priority=-1 shadow；简化版（分组列表+折叠+localStorage 持久化），非 786 行全量移植",
+      "verify": "dump 5 插件×2；9361 实例 style 2068B 注入；shadow 无冲突",
+      "updateRule": "slot inject 面依赖 modelDirectories 服务（上游包提供）+ complex store wiring；功能放弃插件化，回归上游 ModelSelect 基础版"
+    },
+    {
+      "id": "R26",
+      "area": "frontend",
+      "title": "InputBar 输入卡样式插件化（data-composer-card 锚定 + DshChipCell 字体）并入 dsh-ui-tweaks；删 InputBar.module.css overlay",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-ui-tweaks",
+      "sourcePaths": [
+        "plugins/builtin/dsh-ui-tweaks/lib/client.js"
+      ],
+      "upstreamDependency": "无。用稳定 data 属性锚定（data-composer-card / data-decoration），不依赖 css module 哈希",
+      "verify": "overlay-manifest 10→9；重启后 style 注入含 data-composer-card",
+      "updateRule": "变更需经构建链生效（web-build/runtime 同步）；登记后由 evidence gate 验证"
+    },
+    {
+      "id": "R27",
+      "area": "frontend",
+      "title": "failure-display overlay 删除：主场景（turn-error）已由插件覆盖，trajectory 场景接受上游折叠文案",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source",
+      "sourcePaths": [],
+      "upstreamDependency": "无。turn-error 插件已覆盖主会话错误显示；轨迹视图显示上游折叠错误可接受",
+      "verify": "overlay-manifest 9→8",
+      "updateRule": "变更需经构建链生效（web-build/runtime 同步）；登记后由 evidence gate 验证"
+    },
+    {
+      "id": "R28",
+      "area": "frontend",
+      "title": "overlay 归零 + web 构建完成：ContextInjectionRow/E01/failure-display 全部清理，新前端构建并同步 runtime",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source",
+      "sourcePaths": [
+        "product/config/overlay-manifest.json",
+        "product/config/source-exceptions.json"
+      ],
+      "upstreamDependency": "无。上游 0 改动（git -C upstream status clean）",
+      "verify": "9363 实例：5 插件 style 全注入；index.html 引用 index-tHOgJtta.js（新）；指纹与 manifest 一致",
+      "updateRule": "overlay 归零后仅壳层保留；新前端需 build:lib+build:web 并同步 runtime web dist（指纹对照 web-build-result.json）"
+    },
+    {
+      "id": "R29",
+      "area": "shared",
+      "title": "UI 一致性修复：title-bar version overlay 违反 AGENTS.md font 规则（删 font-size/weight）",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source/apps/web/src/desktop-chrome.css",
+      "sourcePaths": [
+        "product/app/frontend/source/apps/web/src/desktop-chrome.css"
+      ],
+      "upstreamDependency": "无。合规修复：删除 brand 和 version-badge 的 font-size/weight，让其继承 native 标题栏字体（AGENTS.md 规则）",
+      "verify": "manifest 235907584B 匹配；css 无 dsh-desktop-version-badge font-size",
+      "updateRule": "unpacked-build verified：win-unpacked 产物 css 无违规 font-size（Evidence Gate 通过）"
+    },
+    {
+      "id": "R30",
+      "area": "shared",
+      "title": "peak-valley sidebar footer 克制化：wide 模式去除 24h timeline（保留 dot+label+time 最小指示）",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-peak-valley",
+      "sourcePaths": [
+        "plugins/builtin/dsh-peak-valley/lib/client.js"
+      ],
+      "upstreamDependency": "无。客户端 JS 变更——peak-valley plugin 的 PeakValleyFooter wide 模式只渲染三项",
+      "verify": "verified（9412）：peak-valley footer 无 timeline（hasTimeline=false——源 client-bundle.js 已同步）",
+      "updateRule": "peak-valley Footer wide 模式移除 24h timeline（客户端 JS）——unpacked-build verified 生效，无需额外构建"
+    },
+    {
+      "id": "R31",
+      "area": "shared",
+      "title": "实例加载链：staging dev 实例需 materialize 重建才拾取新 web dist/插件 client.js",
+      "status": "ACTIVE",
+      "owner": "product/docs/agent",
+      "sourcePaths": [],
+      "upstreamDependency": "无。materialize-runtime 官方链——dev 实例需要",
+      "verify": "materialize 完成 + 重启实例后 CDP 验证 footer/badge 修复生效",
+      "updateRule": "dev runtime 恢复经验：官方 runtime-cache hit 后需 staging/runtime pnpm install 补 node_modules；materialize cpSync 本环境会卡死，unpacked 官方链可绕过"
+    },
+    {
+      "id": "R32",
+      "area": "shared",
+      "title": "内置非公开插件目录 plugins/builtin/：8 个 product-local 插件集中（与 git-submodule 第三方分离），registry path 更新，stageProductPlugins 改 registry 驱动（构建链自动 stage 全部内置插件）",
+      "status": "ACTIVE",
+      "owner": "product/tools",
+      "sourcePaths": [
+        "plugins/registry.json",
+        "product/tools/build-desktop-release.mjs"
+      ],
+      "upstreamDependency": "无。构建链 product/tools 改动（registry 驱动 stage）",
+      "updateRule": "unpacked 构建自动 stage plugins/builtin/ 全部 product-local；dev 改插件后手动 stage 或重跑构建",
+      "verify": "unpacked-build verified：8 内置插件 stage 进 win-unpacked（refreshUnpackedFast 插件刷新段）+ runtime dump 16 匹配；exe GUI 沙箱无交互桌面会话退出（9381 时期可跑）"
+    },
+    {
+      "id": "R33",
+      "area": "shared",
+      "title": "model-select v2：正确服务注入（ctx.inject modelDirectories/sessions + register inject 函数）——上一版漏 inject 面导致 TypeError",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-model-select-enhanced",
+      "sourcePaths": [
+        "plugins/builtin/dsh-model-select-enhanced/lib/client.js"
+      ],
+      "upstreamDependency": "无。slot inject 面按上游契约实现",
+      "updateRule": "dev/unpacked 验证（本环境受阻）",
+      "verify": "verified（9412）：model-select v2 注入（style 在 + 0 错误）"
+    },
+    {
+      "id": "R34",
+      "area": "shared",
+      "title": "dev host 恢复 + profile bundles 精简：根因 = unpacked 卡死时 rmSync 删了 runtime 的 cli/bin.js+web/dist（host 入口缺失）+ 插件移到 builtin 后 profile junction 断链；修复 = cache robocopy 恢复 runtime + profile 精简为官方+dshmarket/ocgo + 产品 8 插件 junction→plugins/builtin",
+      "status": "ACTIVE",
+      "owner": "product/tools",
+      "sourcePaths": [
+        "product/config/runtime-recovery.patch.yml",
+        "C:/Users/89492/.dsh/profiles/web/package.json"
+      ],
+      "upstreamDependency": "无。profile 运行时状态（~/.dsh）恢复",
+      "updateRule": "dev host 现在页面加载 + 0 错误（React 挂载等待初始化——web 应用层）；产品插件双通道（runtime stage + profile junction→builtin）",
+      "verify": "dump 9 插件通过（market+8 内置）；9396 实例 host 就绪 title=DSH Local Build 0 console 错误；unpacked 在沙箱物理不可行（runtime node_modules 三重坑：cache materialize dereference 循环目录 + robocopy MIR 漏 8 包 + install workspace 不完整——实证 ESRCH/ROBO=10）"
+    },
+    {
+      "id": "R35",
+      "area": "shared",
+      "title": "badge 字体对齐 titlebar（AGENTS.md 例外）：.dsh-desktop-version-badge 覆盖上游 8px mono 为 inherit+12px——上游 buildRevision 徽章是产品层唯一例外（规则更新登记）",
+      "status": "ACTIVE",
+      "owner": "product/app/frontend/source",
+      "sourcePaths": [
+        "product/app/frontend/source/apps/web/src/desktop-chrome.css",
+        "AGENTS.md"
+      ],
+      "upstreamDependency": "无。上游 badge 8px mono 样式无法从产品 css 移除（upstream 只读）——覆盖对齐",
+      "updateRule": "web-build + unpacked 生效（badge 与 titlebar 品牌排版一致）",
+      "verify": "verified（9412 实例）：badge 12px + 系统字体（-apple-system/Segoe——非 8px mono）——body[data-dsh-desktop] 特异性覆盖上游 buildRevision"
+    },
+    {
+      "id": "R36",
+      "area": "desktop",
+      "title": "壳内置插件 watcher + host 自动重启（main.ts）：fs.watch plugins/builtin（或 DSH_BUILTIN_PLUGINS_DIR）→ 800ms 防抖 → host.stop/start + loadHostPage——改插件保存→自动重启 host（免打包、免手动重启）",
+      "status": "ACTIVE",
+      "owner": "product/app/desktop/src/main.ts",
+      "sourcePaths": [
+        "product/app/desktop/src/main.ts"
+      ],
+      "upstreamDependency": "无。壳层改动（官方源码不动）",
+      "updateRule": "壳编译（tsc+tsdown）已含 watcher——clean 环境功能验证（沙箱 CDP/serve 环境不稳定）",
+      "verify": "verified（9422 实测）：touch 插件源 → fs.watch 检测 → 800ms → host 自动重启（端口 26906→19515）→ 页面重载新版——并发修复（模块级 busy/pending 序列化）后单次重启成功"
+    },
+    {
+      "id": "R37",
+      "area": "desktop",
+      "title": "内置插件管理（Settings→内置插件）+ 开关持久化 + host 侧过滤：manager 插件(dsh-builtin-plugins) 列全部 8 个内置插件（版本/中文解释/开关）；开关经 userData ui-state 持久化（跨 host 端口轮换不丢），7 个客户端插件 apply() 首行 gate（localStorage 显式值优先，dsh-disabled 查询参数兜底，均命中即跳过全部注入），commandcode-provider 属纯 host 服务走壳层 R36 重启 + 运行时 patch insert 过滤；新增 reload-host-page / restart-host IPC 与 R36 重启管理合并",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin",
+      "sourcePaths": [
+        "plugins/builtin/dsh-builtin-plugins",
+        "plugins/builtin/dsh-peak-valley/lib/client.js",
+        "plugins/builtin/dsh-peak-valley/lib/client-bundle.js",
+        "plugins/builtin/dsh-workspace-performance/lib/client.js",
+        "plugins/builtin/dsh-ui-tweaks/lib/client.js",
+        "plugins/builtin/dsh-message-edit/lib/client.js",
+        "plugins/builtin/dsh-model-settings/lib/client.js",
+        "plugins/builtin/dsh-model-select-enhanced/lib/client.js",
+        "plugins/builtin/dsh-conversation-navigator/lib/client.js",
+        "product/config/runtime-recovery.patch.yml",
+        "product/app/desktop/src/bridge.ts",
+        "product/app/desktop/src/preload.ts",
+        "product/app/desktop/src/main.ts"
+      ],
+      "upstreamDependency": "无。插件目录与壳层改动（官方源码不动）",
+      "updateRule": "desktop:build（tsc+tsdown）+ 插件源编辑（R36 watcher 自动重启 host 生效）；clean 环境端到端开关验证（沙箱 serve 不稳定）",
+      "verify": "implemented + gate-harness ALL PASS：7 个客户端插件×4 场景离线端到端（禁用=param命中/localStorage'0' → apply 0 注入；启用=localStorage'1'覆盖stale param/默认开启 → 预期注册；model-settings 重载路径先前 live 验证）；manager 冒烟：dsh-disabled 存在时仍注册 settings.section（无 self-gate）；运行时级实测（工作区 DSH_HOME + junction 镜像启动 unpacked runtime web host）：9-insert patch 合入正常，GET /plugins/<id>/client.js 下发内容与源一致且含 gate（peak-valley 11570B、model-settings 142461B 与源逐字节一致——证明 loader stale 实目录→junction 修复生效、conversation-navigator 34071B、manager 9990B），commandcode 404=host-only 无 client（与 manager「主机服务」语义一致）；desktop bundle 编译通过（含新 IPC 与 dsh-disabled 下发）；patch insert 过滤离线单测通过；index valid(53)/layout PASS/source-policy PASS/product-source PASS；唯一剩余 clean 环境 GUI 鼠标点测（沙箱禁外部浏览器/CDP）"
+    },
+    {
+      "id": "M01a",
+      "area": "backend",
+      "title": "Master catalog reasoningEfforts stamped + commandcode adapter catalog fallback (修复思考强度缺失)",
+      "status": "ACTIVE",
+      "owner": "product/config",
+      "files": [
+        "product/config/model-catalog.json",
+        "plugins/builtin/dsh-commandcode-provider/lib/index.js"
+      ],
+      "notes": "M01 链路两处断点修复：1) 顶层 models 扁平表 1345 条补 reasoningEfforts（只从 providers 区 reasoning_options 有据提升，vendor 渠道优先、别名 bare/full 合并、多数票，不发明数据）；2) commandcode adapter 新增 effortsForModel()——KNOWN_EFFORTS（CLI 实测表）仍是 override，catalog 仅兜底 CLI 表未收录的模型（如 deepseek-v4-flash-vision-exp → off/low/high/max）；resolveModel 与 stream 请求 guard 两处接入。deepseek-v4-flash-fast 无上游依据，保持无可选等级。",
+      "verify": "node --check plugins/builtin/dsh-commandcode-provider/lib/index.js + 探针查表 vision-exp=>[low,high,high... low,high,max]"
+    },
+    {
+      "id": "R38",
+      "area": "plugin",
+      "title": "model-select flyout 加载态+store订阅自动填充（修复重启后「暂无模型」死板空态）",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-model-select-enhanced",
+      "files": [
+        "plugins/builtin/dsh-model-select-enhanced/lib/client.js"
+      ],
+      "notes": "host 重启后目录首次构建期间（9 组 provider 逐模型 resolveModelInfo），面板曾死板显示「暂无模型」且不随到货刷新。改为：空态按 store.status 区分「加载中…/暂无模型」；showPanel 订阅 directory.store（subscribe 返回 stop），版本号去重后 replaceWith 重渲染并重钉底对齐；panelSeq+hidePanel 递增使死面板订阅自动退订；status=idle 时兜底 dir.load()。；追加硬化：面板创建瞬间即带 position:fixed/offscreen/width/boxSizing/overflow 内联样式（任何后续异常都不可能让面板以裸流式块落在页面底部），hidePanel 改 querySelectorAll 清扫全部面板实例防重复残留。",
+      "verify": "node --check + stub 探针（apply 无异常、styles/listeners 注入）；R36 失效需手动重启应用后生效"
+    },
+    {
+      "id": "R40",
+      "area": "plugin",
+      "title": "版本徽标上半段不可点修复：抬到壳层拖拽条之上（dsh-ui-tweaks）",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-ui-tweaks",
+      "files": [
+        "plugins/builtin/dsh-ui-tweaks/lib/client.js"
+      ],
+      "notes": "根因：壳层拖拽区 .dsh-desktop-drag-region（fixed、高 36px=titlebar、z-index 2147483645、app-region:drag）覆盖在侧栏 brand 行上，徽标（上游 SidebarRoot buildRevision chip，被 desktop-chrome.ts 接管为版本按钮）上半段落在拖拽区内 → 按下被 OS 当作拖窗，不派发 click、光标不变；下半段露在条外可点。修法：插件注入 body[data-dsh-desktop] .dsh-desktop-version-badge { position: relative; z-index: 2147483646 }（压过拖拽条、低于 ::after 边框 2147483647），徽标自带 no-drag + pointer-events:auto 故整块可点；仅 position/z-index，不触碰字号字体（AGENTS 约束）。注：规范落点 desktop-chrome.css 需 web+壳重构建，本次走插件形态（首选形态）即时生效。",
+      "verify": "node --check + 注入探针（规则存在、无 font-size 覆盖）"
+    },
+    {
+      "id": "R41",
+      "area": "plugin",
+      "title": "版本徽标点击垫（dsh-ui-tweaks）：置顶 no-drag pad 覆盖徽标矩形，彻底修半段不可点",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-ui-tweaks",
+      "files": [
+        "plugins/builtin/dsh-ui-tweaks/lib/client.js"
+      ],
+      "notes": "R40 的 z-index 抬升（让徽标压过拖拽条）在用户重启后仍未生效——说明遮挡物不是可被 z-index 绕过的拖拽条本体（或徽标被祖先层叠上下文困住）。改为层叠无关方案：插件在 body 末尾追加透明 pad（position:fixed、z-index 2147483647、cursor:pointer、-webkit-app-region:no-drag），按徽标 getBoundingClientRect 实时对位（resize/scroll/700ms 轮询跟随），click 转发给 .dsh-desktop-version-badge；徽标不存在或尺寸为 0 时 pad 收缩为 0x0 不占位。仅覆盖徽标自身矩形，不影响窗口拖拽与其他控件。",
+      "verify": "node --check + stub 探针：pad 创建/挂 body/对位 100,10 90x24/点击转发/跟随轮询 全 OK；R40 规则保留作双保险"
+    },
+    {
+      "id": "R42",
+      "area": "desktop",
+      "title": "版本选择器自动获取上游版本号（运行时拉 GitHub tags + 磁盘缓存 + 静态快照回退）",
+      "status": "ACTIVE",
+      "owner": "product/app/desktop/src/main.ts",
+      "files": [
+        "product/app/desktop/src/main.ts"
+      ],
+      "notes": "症状：版本菜单只有构建时静态 official-versions.json 的 4 条（0.1.0-rc.7..0.1.1-rc.2），上游新 tag 永不出现（实测上游已有 dsh-v0.1.6-alpha.1）。修法：新增 UPSTREAM_VERSIONS_API_URL（api.github.com/repos/deepseek-ai/deepseek-harness/tags?per_page=100）+ 缓存 userData/upstream-versions-cache.json（TTL 30min）+ 4s 超时；readOfficialVersions() 改为「静态快照 ∪ 缓存/实时」按 tag 去重、版本号数字序；无缓存时首次打开有界等待（≤4s）以当次即显示，有缓存时后台刷新；GitHub 不可达则静默回退静态快照。上游行仍标 official/不可切换（未构建产品包）——只解决「看得见新版本号」。",
+      "verify": "tsc -b 通过；待 product:desktop:unpacked 构建 + 清单校验 + 启动 win-unpacked exe 目视版本菜单含上游新 tag"
+    },
+    {
+      "id": "R43",
+      "area": "ci",
+      "title": "发布自动化：publish-portable 工作流（上游 tag → portable 构建 → GitHub release，应用内一键更新链路）",
+      "status": "ACTIVE",
+      "owner": ".github/workflows/publish-portable.yml",
+      "files": [
+        ".github/workflows/publish-portable.yml"
+      ],
+      "notes": "应用侧链路已存在（switchVersion → 未下载则 downloadVersion → app.relaunch+exit），缺的是「可下载的产品构建」。上游 releases 无资产、fork releases 为空 → 新增 CI：windows-latest + submodules，fetch 上游 tags 后 checkout（默认取最新未发布 tag，也可 workflow_dispatch 指定），pnpm install --frozen-lockfile，pnpm run product:desktop:portable 产出 DeepSeek Harness.exe，gh release create v<version>（title=上游版本号，资产名保持 DeepSeek Harness.exe，乃壳解析契约）。契约：tag_name→productVersion、name→upstreamVersion、asset→下载后写入版本库并 relaunch。",
+      "verify": "YAML 结构人工核对（无本地 parser）；首次 CI 运行结果待确认"
+    }
+  ]
+}

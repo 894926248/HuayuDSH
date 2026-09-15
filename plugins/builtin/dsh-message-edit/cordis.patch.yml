@@ -1,0 +1,4 @@
+# dsh-message-edit bundle layer.
+- insert:
+    - id: dsh-message-edit
+      name: dsh-message-edit

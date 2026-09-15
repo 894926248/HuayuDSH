@@ -1,0 +1,105 @@
+# Publish a portable product build for an upstream tag, so the desktop app's
+# version menu can offer it as a one-click update (download -> switch ->
+# relaunch; see switchVersion/downloadVersion in product/app/desktop).
+#
+# The app resolves candidates from this repository's GitHub releases:
+#   tag_name  -> product version   (release id, e.g. v0.1.6-alpha.1)
+#   name      -> upstream version  (shown in the picker)
+#   asset     -> "DeepSeek Harness.exe" (portable executable, written verbatim
+#                into the version store and relaunched by the shell)
+# The asset name is therefore part of the contract, not cosmetic.
+
+name: Publish Portable
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Upstream tag to build (e.g. dsh-v0.1.6-alpha.1). Leave empty for the newest unpublished tag.'
+        required: false
+        default: ''
+  schedule:
+    # Daily sweep: pick up any upstream tag that has no product release yet.
+    - cron: '0 3 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-portable
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Resolve upstream tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git -C upstream fetch --tags --force origin
+          requested='${{ inputs.tag }}'
+          if [ -n "$requested" ]; then
+            tag="$requested"
+          else
+            tag=''
+            while IFS= read -r candidate; do
+              [ -z "$candidate" ] && continue
+              if gh release view "v${candidate#dsh-v}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+                continue
+              fi
+              tag="$candidate"
+              break
+            done < <(git -C upstream tag --list 'dsh-v*' --sort=-version:refname)
+          fi
+          if [ -z "$tag" ]; then
+            echo "no unpublished upstream tag found"
+            echo "SKIP=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          if ! git -C upstream rev-parse --verify --quiet "refs/tags/$tag" >/dev/null; then
+            echo "unknown upstream tag: $tag" >&2
+            exit 1
+          fi
+          version="${tag#dsh-v}"
+          git -C upstream checkout --detach "$tag"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "building $tag (version $version)"
+
+      - name: Install dependencies
+        if: env.SKIP != '1'
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build portable package
+        if: env.SKIP != '1'
+        run: pnpm run product:desktop:portable
+
+      - name: Publish release
+        if: env.SKIP != '1'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          asset='.workspace/artifacts/staging/desktop/DeepSeek Harness.exe'
+          test -f "$asset"
+          gh release create "v$VERSION" "$asset" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$VERSION" \
+            --notes "Portable product build for upstream $TAG. Installable from the desktop app's version menu (download, switch, relaunch)."

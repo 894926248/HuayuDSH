@@ -1,0 +1,4 @@
+# dsh-workspace-performance bundle layer.
+- insert:
+    - id: dsh-workspace-performance
+      name: dsh-workspace-performance

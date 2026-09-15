@@ -1,0 +1,3 @@
+# dsh-builtin-plugins bundle layer.
+- insert:/n    - id: dsh-builtin-plugins
+      name: dsh-builtin-plugins

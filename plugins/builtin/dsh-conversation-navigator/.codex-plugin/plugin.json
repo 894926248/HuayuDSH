@@ -1,0 +1,21 @@
+{
+  "name": "dsh-conversation-navigator",
+  "version": "0.1.0",
+  "description": "Codex-style conversation node navigator for DeepSeek Harness.",
+  "author": {
+    "name": "Local developer"
+  },
+  "interface": {
+    "displayName": "Dsh Conversation Navigator",
+    "shortDescription": "Select and preview every user message from the chat gutter.",
+    "longDescription": "A standalone conversation navigator that keeps the established dense node rail, hover preview, centered layout, isolated wheel window, and transcript-only jumps.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "conversation node navigation",
+      "message preview",
+      "isolated transcript scrolling"
+    ],
+    "defaultPrompt": "Show the conversation nodes."
+  }
+}

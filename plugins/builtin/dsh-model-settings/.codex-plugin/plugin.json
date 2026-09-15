@@ -1,0 +1,21 @@
+{
+  "name": "dsh-model-settings",
+  "version": "0.1.0+codex.20260823153811",
+  "description": "Generic model catalog and saved-selection controls for every provider in DeepSeek Harness.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Dsh Model Settings",
+    "shortDescription": "Complete provider catalogs with saved models selected.",
+    "longDescription": "Replaces the Models settings page with a provider-agnostic catalog picker that reads and writes the official settings configuration only.",
+    "developerName": "Local developer",
+    "category": "Developer Tools",
+    "capabilities": [
+      "provider model catalog",
+      "saved model selection"
+    ],
+    "defaultPrompt": "Show the complete catalog for this provider."
+  }
+}

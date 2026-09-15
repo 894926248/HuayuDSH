@@ -1,0 +1,20 @@
+{
+  "name": "dsh-commandcode-provider",
+  "version": "0.1.0",
+  "description": "Built-in Command Code provider route exposed through the generic Models settings page.",
+  "author": {
+    "name": "DeepSeek Harness Product"
+  },
+  "interface": {
+    "displayName": "Command Code Provider",
+    "shortDescription": "Built-in Command Code provider.",
+    "longDescription": "Registers the Command Code provider and keeps its configuration in the shared Models settings surface.",
+    "developerName": "DeepSeek Harness Product",
+    "category": "Developer Tools",
+    "capabilities": [
+      "commandcode provider",
+      "generic model settings"
+    ],
+    "defaultPrompt": "Configure the Command Code provider in Models settings."
+  }
+}

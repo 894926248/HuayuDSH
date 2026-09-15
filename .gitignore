@@ -1,0 +1,11 @@
+.env
+node_modules/
+*.tsbuildinfo
+pnpm-debug.log
+.pnpm-store/
+.cache/
+coverage/
+.playwright-mcp/
+.workspace/
+product/app/desktop/lib/
+product/app/desktop/build/host-root.json

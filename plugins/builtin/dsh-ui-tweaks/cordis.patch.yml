@@ -1,0 +1,4 @@
+# dsh-ui-tweaks bundle layer.
+- insert:
+    - id: dsh-ui-tweaks
+      name: dsh-ui-tweaks

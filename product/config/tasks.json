@@ -1,0 +1,299 @@
+{
+  "schema": "dsh.tasks.v1",
+  "project": "deepseek-harness",
+  "updatedAt": "2026-09-01T22:46:24.849Z",
+  "notes": "任务目录 + 功能索引：features 区是产品功能总索引（每个功能：现状实现 / 目标实现 / 迁移状态 / 关联变更与任务）；tasks 区是要做的活。changes.json 记录变更细节，本文件是管理视图。",
+  "features": [
+    {
+      "id": "F01",
+      "name": "桌面壳渲染定制（版本选择器/标题栏）",
+      "now": "frontend overlay (apps/web/src)",
+      "target": "壳层 preload",
+      "state": "T03 待迁移",
+      "ref": [
+        "T03"
+      ]
+    },
+    {
+      "id": "F02",
+      "name": "消息操作/模型设置/拖拽",
+      "now": "ui-conversation overlay (MessageItem 等)",
+      "target": "内部 client 插件",
+      "state": "T01 待迁移",
+      "ref": [
+        "T01"
+      ]
+    },
+    {
+      "id": "F03",
+      "name": "Codex 风格布局/侧边栏策略",
+      "now": "ui-layout overlay (AppFrame/columns/stores)",
+      "target": "内部 client 插件",
+      "state": "T01 待迁移",
+      "ref": [
+        "T01"
+      ]
+    },
+    {
+      "id": "F04",
+      "name": "峰谷电价显示（含性能修复 R10）",
+      "now": "内部插件 plugins/dsh-peak-valley",
+      "target": "内部插件（保持）",
+      "state": "已合规",
+      "ref": []
+    },
+    {
+      "id": "F05",
+      "name": "失败诊断显示（原始错误）",
+      "now": "runtime overlay (failure-display.ts)",
+      "target": "内部 client 插件（事件拦截）",
+      "state": "T01 待迁移",
+      "ref": [
+        "T01"
+      ]
+    },
+    {
+      "id": "F06",
+      "name": "消息「回头编辑」",
+      "now": "ui-conversation overlay (MessageItem)",
+      "target": "内部 client 插件",
+      "state": "T01 待迁移",
+      "ref": [
+        "T01"
+      ]
+    },
+    {
+      "id": "P01",
+      "name": "Codex 风格会话节点导航器",
+      "now": "ui-conversation overlay (conversation-nodes)",
+      "target": "内部 client 插件（自定义 node）",
+      "state": "T01 待迁移",
+      "ref": [
+        "T01"
+      ]
+    },
+    {
+      "id": "P02",
+      "name": "通用模型设置面板",
+      "now": "ui-model-selection overlay (ModelSelect)",
+      "target": "内部 client 插件（settings.section）",
+      "state": "T01 待迁移",
+      "ref": [
+        "T01"
+      ]
+    },
+    {
+      "id": "P03",
+      "name": "内置 Command Code provider",
+      "now": "patch/配置",
+      "target": "patch（保持）",
+      "state": "已合规",
+      "ref": []
+    },
+    {
+      "id": "P04",
+      "name": "Harness recovery / provider 重试",
+      "now": "壳 product/app/desktop/harness-recovery",
+      "target": "壳（保持）",
+      "state": "已合规",
+      "ref": []
+    },
+    {
+      "id": "R07",
+      "name": "turn-error 诊断展开器",
+      "now": "ui-conversation overlay (turn-error.ts)",
+      "target": "内部 client 插件（自定义 node）",
+      "state": "T01 待迁移",
+      "ref": [
+        "T01"
+      ]
+    },
+    {
+      "id": "R08",
+      "name": "ContextInjectionRow 弹层",
+      "now": "ui-conversation overlay (ContextInjectionRow)",
+      "target": "内部 client 插件",
+      "state": "T01 待迁移",
+      "ref": [
+        "T01"
+      ]
+    },
+    {
+      "id": "R09",
+      "name": "会话列表虚拟化（E01）",
+      "now": "ui-workspace overlay (WorkspaceBrowser+Rows)",
+      "target": "待定（插件机制难覆盖）",
+      "state": "T02 待决策",
+      "ref": [
+        "T02"
+      ]
+    },
+    {
+      "id": "R10",
+      "name": "peak-valley 性能修复",
+      "now": "插件内修改",
+      "target": "插件（保持）",
+      "state": "已合规",
+      "ref": []
+    },
+    {
+      "id": "R11",
+      "name": "ChatNodeSeat 窗口化（已撤销）",
+      "now": "无",
+      "target": "无",
+      "state": "REVERTED",
+      "ref": []
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T01",
+      "title": "迁移 18 个 ui-* overlay 为内部不公开 client 插件",
+      "status": "done",
+      "blockedBy": "等待用户批准迁移方案",
+      "dependsOn": [],
+      "scope": [
+        "ui-conversation: MessageItem.tsx, ContextInjectionRow.tsx, ContextMeter.tsx, turn-error.ts, 8×module.css",
+        "ui-layout: AppFrame.tsx, columns.ts, stores.ts",
+        "ui-model-selection: ModelSelect.tsx",
+        "runtime: failure-display.ts"
+      ],
+      "approach": "client 插件（peak-valley 同款）：slots 注册 + CSS 注入 + DOM 挂钩 + 事件拦截（waterfall）。上游源码 0 改动。",
+      "verify": "迁移后 overlay-manifest 移除对应条目；dev 实例验证功能等价；上游 git status 仍为 0 改动",
+      "doneAt": "2026-09-01T22:46:24.849Z",
+      "decision": "overlay 24→4 壳层；9 插件；构建完成"
+    },
+    {
+      "id": "T02",
+      "title": "E01 会话列表虚拟化去向决策",
+      "status": "paused",
+      "dependsOn": [],
+      "options": [
+        "保留（8/28 已批准，性能收益真实，虚拟化是唯一插件机制难覆盖的）",
+        "放弃（回到上游原版列表，侧边栏可能回到全量渲染卡顿）",
+        "DOM 挂钩硬做（脆弱，不推荐）"
+      ],
+      "decision": "E01 插件化试点（content-visibility）用户实测掉帧，暂时搁置"
+    },
+    {
+      "id": "T03",
+      "title": "desktop-chrome（apps/web/src × 2）归位壳层",
+      "status": "todo",
+      "dependsOn": [],
+      "scope": [
+        "product/app/frontend/source/apps/web/src/desktop-chrome.ts",
+        "product/app/frontend/source/apps/web/src/desktop-chrome.css"
+      ],
+      "approach": "迁入 product/app/desktop（preload/壳层注入），从 frontend overlay 移除；它是壳功能（版本选择器、窗口标题栏），不属于 UI 插件"
+    },
+    {
+      "id": "T04",
+      "title": "清理根目录违规日志 startup-error.log",
+      "status": "done",
+      "dependsOn": [],
+      "scope": [
+        "startup-error.log（根目录，8/23 遗留）"
+      ],
+      "violation": "AGENTS.md: Do not write throwaway scripts or logs into the project root",
+      "doneAt": "2026-09-01T09:46:45.318Z"
+    },
+    {
+      "id": "T05",
+      "title": "overlay 清零后的工具链收敛",
+      "status": "todo",
+      "dependsOn": [
+        "T01",
+        "T03"
+      ],
+      "scope": [
+        "product/tools/rebuild-frontend-overlay.mjs（若 overlay 全部移除则停用）",
+        "overlay-manifest.json / source-exceptions.json 归档",
+        "product/config/changes.json 补记本次迁移"
+      ],
+      "approach": "T01/T03 完成后，overlay 清单应为空；工具链随之收敛"
+    },
+    {
+      "id": "T06",
+      "title": "索引规范并入 AGENTS.md（product/docs/agent/indexing.md）",
+      "status": "done",
+      "dependsOn": [],
+      "scope": [
+        "AGENTS.md",
+        "product/docs/agent/indexing.md"
+      ],
+      "approach": "将 indexing.md 核心条款（第 2/3/4/7/8 节）摘要并入 AGENTS.md House Rules",
+      "verify": "用户批准后登记 changes.json",
+      "doneAt": "2026-09-01T09:47:44.325Z"
+    },
+    {
+      "id": "T07",
+      "title": "官方插件文档入库 product/docs/plugins/（28 篇 zh）+ AGENTS.md/indexing.md 指向",
+      "status": "done",
+      "doneAt": "2026-09-01T10:11:51.974Z",
+      "dependsOn": [],
+      "scope": [
+        "product/docs/plugins/**",
+        "product/docs/agent/indexing.md (第9节)",
+        "AGENTS.md (Required Reading)"
+      ],
+      "approach": "从 upstream/docs 复制官方 zh 文档至 product/docs/plugins/（cordis-tutorial/cordis-api/cookbook/架构UI）；写 README 导航；indexing.md 第 9 节指向；AGENTS.md Required Reading 加指向",
+      "verify": "find product/docs/plugins -name \"*.md\" | wc -l = 28 + README"
+    },
+    {
+      "id": "T08",
+      "title": "E01 虚拟化插件化：dsh-workspace-performance（content-visibility CSS 方案）",
+      "status": "paused",
+      "dependsOn": [],
+      "scope": [
+        "plugins/dsh-workspace-performance/**",
+        "registry.json",
+        "profile junction",
+        "runtime-recovery.patch.yml"
+      ],
+      "approach": "纯 CSS content-visibility 跳过离屏行渲染（浏览器原生虚拟化），不替换组件零风险；行高 32px 契约",
+      "verify": "dump-config 加载 + 前台运行无 ERR + CSS 类名子串匹配（CSS modules 哈希保留原类名）",
+      "pauseReason": "用户实测 content-visibility 掉帧，暂不追求 E01 虚拟化；overlay 版随 T01 清理时删除"
+    },
+    {
+      "id": "T09",
+      "title": "turn-error 诊断 → 内部插件（cookbook conversation-node 路径）",
+      "status": "in_progress",
+      "dependsOn": [],
+      "scope": [
+        "plugins/dsh-turn-error-diagnostics/**",
+        "upstream turn-error 数据流"
+      ],
+      "approach": "按 cookbook/adding-a-conversation-node 注册自定义节点/扩展 turn-error 显示",
+      "verify": "dump-config 加载 + 会话错误节点显示完整原始错误",
+      "progress": "插件已创建+注册+stage+junction+dump-config 加载验证通过；运行时显示效果待用户实测"
+    },
+    {
+      "id": "T10",
+      "title": "dsh-ui-tweaks：独立样式定制插件化",
+      "status": "done",
+      "doneAt": "2026-09-01T18:19:51.924Z",
+      "dependsOn": [],
+      "scope": [
+        "plugins/dsh-ui-tweaks/**"
+      ],
+      "verify": "9357 实例 CDP 自测 style 注入通过"
+    },
+    {
+      "id": "T11",
+      "title": "overlay 收敛：冗余 css 清理 + ReasoningRow 并入 ui-tweaks",
+      "status": "done",
+      "doneAt": "2026-09-01T18:21:14.776Z",
+      "dependsOn": []
+    },
+    {
+      "id": "T12",
+      "title": "剩余 overlay 决策：InputBar css / failure-display / ContextInjectionRow / ModelSelect",
+      "status": "done",
+      "blockedBy": "等待用户逐项决策（保留/插件化/放弃）",
+      "dependsOn": [],
+      "progress": "ModelSelect/InputBar 已插件化；剩余 3 项技术保留（ContextInjectionRow DOM 挂钩脆弱、failure-display 低优先、E01 暂停）",
+      "doneAt": "2026-09-01T22:46:24.849Z",
+      "decision": "ContextInjectionRow/E01/failure-display 回上游（功能归零）；ModelSelect/InputBar 插件化"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+packages:
+  - product/app/desktop
+
+allowBuilds:
+  electron: true
+  electron-winstaller: false
+  esbuild: false

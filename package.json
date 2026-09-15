@@ -1,0 +1,46 @@
+{
+  "name": "deepseek-harness-product",
+  "version": "0.1.0-dev.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "desktop:build": "pnpm --filter @deepseek-ai/dsh-desktop run build",
+    "desktop:dev": "pnpm --filter @deepseek-ai/dsh-desktop run dev",
+    "desktop:package": "pnpm --filter @deepseek-ai/dsh-desktop run package",
+    "desktop:dist": "pnpm --filter @deepseek-ai/dsh-desktop run dist",
+    "product:layout": "node product/tools/verify-repository-layout.mjs",
+    "product:versions": "node product/tools/show-versions.mjs",
+    "product:upstream:list": "node product/tools/select-upstream.mjs list",
+    "product:upstream:fetch": "node product/tools/select-upstream.mjs fetch",
+    "product:upstream:select": "node product/tools/select-upstream.mjs select",
+    "product:upstream:rollback": "node product/tools/select-upstream.mjs rollback",
+    "product:validate": "node product/tools/validate-product-index.mjs validate",
+    "product:source-check": "pnpm run product:guard && node product/tools/verify-product-source.mjs",
+    "product:guard": "node product/tools/verify-source-policy.mjs",
+    "product:frontend-sync": "node product/tools/rebuild-frontend-overlay.mjs",
+    "product:source-prepare": "node product/tools/prepare-product-source.mjs .workspace/artifacts/staging/source",
+    "product:web:build": "node product/tools/build-web.mjs",
+    "product:runtime:build": "node product/tools/build-runtime.mjs",
+    "product:desktop:unpacked": "node product/tools/build-desktop-unpacked.mjs",
+    "product:desktop:portable": "node product/tools/build-desktop-portable.mjs",
+    "product:desktop:installer": "node product/tools/build-desktop-installer.mjs",
+    "product:desktop:install": "node product/tools/install-desktop.mjs",
+    "product:upstream": "node product/tools/verify-upstream-clean.mjs",
+    "product:build": "node product/tools/build-desktop-release.mjs",
+    "product:build:fast": "node product/tools/build-desktop-release.mjs --fast",
+    "product:runtime:refresh": "node product/tools/build-desktop-release.mjs --refresh-runtime --runtime-only",
+    "product:release": "node product/tools/build-desktop-release.mjs --release",
+    "product:artifacts": "node product/tools/retain-artifacts.mjs list"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
+    "tsdown": "^0.22.2",
+    "typescript": "^6.0.3"
+  }
+}
