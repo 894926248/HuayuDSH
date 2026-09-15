@@ -830,6 +830,42 @@
       ],
       "notes": "CI 非 fast 链在 prepare-product-source 报 product overlay hash mismatch: frontend/apps/web/src/css.d.ts → 叠加源改过但清单未刷新（--fast 链跳过该步故本地未暴露）。运行 product/tools/rebuild-frontend-overlay.mjs 刷新：4 行（apps/web/src/{css.d.ts,desktop-chrome.css,desktop-chrome.ts,main.ts}）哈希更新；10 行 packages/client/**（ui-conversation chat CSS、ui-layout AppFrame 等）因源文件已迁为插件而失效被移除——符合「覆盖收敛到零」方向。",
       "verify": "node product/tools/rebuild-frontend-overlay.mjs 输出 refreshed at b150a551 / indexed 4 UI files"
+    },
+    {
+      "id": "R45",
+      "area": "plugin",
+      "title": "版本徽标更新提示（dsh-ui-tweaks）：accent 色「↑ 更新」药丸（非红点）+ 点击垫覆盖",
+      "status": "ACTIVE",
+      "owner": "plugins/builtin/dsh-ui-tweaks",
+      "files": [
+        "plugins/builtin/dsh-ui-tweaks/lib/client.js"
+      ],
+      "notes": "壳通过 preload 在 window.dshDesktop 暴露 listVersions（含 switchable/current/productVersion），插件无需改壳即可判定更新。**形态遵循成熟软件惯例**：Chrome/Edge=向上箭头、VS Code=计数徽标、Telegram=「Update」药丸、macOS=蓝色数字角标——更新是中性/品牌色语义，红色只属于错误/故障，故不用红点。实现：仅当存在「非当前 + switchable（有可下载构建）+ 版本更新」时，在徽标右侧 6px 显示 11px 高圆角药丸「↑ 更新」（color/background 取 --dsw-alias-accent，半透明底），tooltip「有新版本可更新：vX」；10 分钟轮询 + window focus + visibilitychange；React 重渲染后自动补挂；点击垫按药丸宽度扩宽（pad.dataset.dshBadgeWidth），保证整块可点=打开版本菜单。纯上游 tag（未构建产品包）不提示。",
+      "verify": "stub 探针：角标挂载/可见/tooltip/轮询 全 OK"
+    },
+    {
+      "id": "R46",
+      "area": "ci",
+      "title": "发布工作流改为 10 分钟轮询（无跨仓库 tag 订阅，用高频 sweep 代替每日一次）",
+      "status": "ACTIVE",
+      "owner": ".github/workflows/publish-portable.yml",
+      "files": [
+        ".github/workflows/publish-portable.yml"
+      ],
+      "notes": "GitHub 不支持订阅他仓库 tag；改为 cron */10 * * * *，无新 tag 时 resolve 步即 SKIP 退出（秒级、不构建），有新 tag 才走完整构建发布。",
+      "verify": "workflow 已推送 main（commit 2cb1684）"
+    },
+    {
+      "id": "R47",
+      "area": "desktop",
+      "title": "runtime-host verify 探针保留公告 URL 的 token（修复较新上游 401 导致打包自检失败）",
+      "status": "ACTIVE",
+      "owner": "product/app/desktop/scripts/runtime-host.mjs",
+      "files": [
+        "product/app/desktop/scripts/runtime-host.mjs"
+      ],
+      "notes": "CI 全链构建到 electron-builder 产出 DeepSeek Harness.exe 后，runtime-host.mjs verify 启动打包 host 做健康探针 → HTTP 401。根因：探针正则 /\bdsh web:s+(http://127.0.0.1:d+)/ 只截取 origin，丢掉公告 URL 的 ?token=…，而较新上游（0.1.6-alpha.1）的 host 强制校验启动 token。修法：正则改为捕获完整 URL（[^s]*），探针按原样带 token 访问；无 token 的旧 host 仍匹配兼容。",
+      "verify": "node --check + 正则可读性探针（带/不带 token 两例）"
     }
   ]
 }

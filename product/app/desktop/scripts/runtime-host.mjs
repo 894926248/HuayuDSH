@@ -187,7 +187,9 @@ function waitForWebHost(child) {
     }
     const append = (chunk) => {
       output = `${output}${chunk}`.slice(-HOST_OUTPUT_LIMIT)
-      const match = /\bdsh web:\s+(http:\/\/127\.0\.0\.1:\d+)/iu.exec(output)
+      // Keep the announced URL verbatim, query string included: a host that
+      // enforces its launch token answers 401 for the bare origin.
+      const match = /\bdsh web:\s+(http:\/\/127\.0\.0\.1:\d+[^\s]*)/iu.exec(output)
       const url = match?.[1]
       if (url === undefined || probing) return
       probing = true
