@@ -22,6 +22,7 @@ const refreshRuntime = process.argv.includes('--refresh-runtime')
 const runtimeOnly = process.argv.includes('--runtime-only')
 const fastMode = process.argv.includes('--fast')
 const replace = process.argv.includes('--replace')
+const portableMode = process.argv.includes('--portable')
 
 function git(cwd, args) {
   return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' }).trim()
@@ -483,7 +484,13 @@ try {
     if (!refreshed) {
       rmSync(stagingRoot, { recursive: true, force: true })
       mkdirSync(stagingRoot, { recursive: true })
-      run('pnpm', ['--filter', '@deepseek-ai/dsh-desktop', 'exec', 'electron-builder', '--dir'])
+      // `--dir` leaves only `win-unpacked/`; the portable distribution mode
+      // additionally needs the single-file `win.target: portable` artifact
+      // (its own `.exe` at the staging root) that the version menu downloads.
+      run('pnpm', [
+        '--filter', '@deepseek-ai/dsh-desktop', 'exec', 'electron-builder',
+        ...(portableMode ? [] : ['--dir']),
+      ])
     }
     run('node', ['product/app/desktop/scripts/runtime-host.mjs', 'verify', '--unpacked', unpackedRoot])
   } finally {

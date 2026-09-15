@@ -4,10 +4,12 @@ import { resolve } from 'node:path'
 import { writeBuildResult } from './write-build-result.mjs'
 
 const root = resolve(import.meta.dirname, '../..')
+// The desktop chain defaults to an unpacked (`--dir`) build; portable mode asks
+// it for the single-file `win.target: portable` artifact this script owns.
 const command = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'pnpm'
 const args = process.platform === 'win32'
-  ? ['/d', '/s', '/c', 'pnpm run product:build']
-  : ['run', 'product:build']
+  ? ['/d', '/s', '/c', 'pnpm run product:build -- --portable']
+  : ['run', 'product:build', '--', '--portable']
 const result = spawnSync(command, args, {
   cwd: root,
   stdio: 'inherit',

@@ -890,6 +890,19 @@
       ],
       "notes": "与 R47/R48 同源问题：上游 0.1.6-alpha.1 起 host 强制浏览器认证（合法 GET /?token= → 303 + Set-Cookie 签名 cookie，无 cookie 一律 401）。壳侧三处受影响：①waitForAnnouncedUrl 正则只截 origin，丢掉 ?token= → 窗口 loadURL 裸 origin 必 401 白屏（已改为保留完整 URL）；②probeHost 用普通 fetch（自动跟跳到无 cookie 的 /）→ 就绪探测永远失败（改为 redirect:manual，3xx+Location 即视为 host 已就绪，认证握手交由窗口完成）；③主进程无 cookie jar，warmUpModelDirectory 的 /api/* 请求会 401 导致模型目录预热静默失效（新增 authCookieFor(origin) 一次性换票并缓存，请求带 cookie 头）。旧版无认证 host 全部路径保持兼容。",
       "verify": "tsc -b 通过"
+    },
+    {
+      "id": "R50",
+      "area": "product",
+      "title": "修复 portable 构建模式：product:build 支持 --portable 产出单文件便携 exe",
+      "status": "ACTIVE",
+      "owner": "product/tools",
+      "files": [
+        "product/tools/build-desktop-release.mjs",
+        "product/tools/build-desktop-portable.mjs"
+      ],
+      "notes": "现象：CI 全链构建通过（源准备/web/桌面/electron-builder/verify 全绿）后，build-desktop-portable.mjs 报「portable executable is missing: staging/desktop/DeepSeek Harness.exe」。根因：product:build（build-desktop-release.mjs）固定用 electron-builder --dir，只产出 win-unpacked/ 目录；而产品文档 update-chain.md 定义 product:desktop:portable 为便携分发模式、且桌面包 electron-builder 的 win.target 本来就是 portable（artifactName=DeepSeek Harness.exe）。即便携链路的下游（本脚本 + 版本菜单下载契约 executable=DeepSeek Harness.exe）与上游构建目标不一致。修法：build-desktop-release.mjs 新增 --portable（portable 时不加 --dir，产出单文件 exe，同时仍生成 win-unpacked 供 verify）；build-desktop-portable.mjs 透传 -- --portable。",
+      "verify": "node --check 双文件 + flag/参数拼装探针"
     }
   ]
 }
