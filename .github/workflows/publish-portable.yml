@@ -24,8 +24,10 @@ on:
         required: false
         default: ''
   schedule:
-    # Daily sweep: pick up any upstream tag that has no product release yet.
-    - cron: '0 3 * * *'
+    # Poll upstream every 10 minutes: GitHub offers no cross-repository tag
+    # subscription, so the sweep doubles as the subscription. When nothing new
+    # exists the job exits after the resolve step (seconds, no build).
+    - cron: '*/10 * * * *'
 
 permissions:
   contents: write
