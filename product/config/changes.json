@@ -866,6 +866,18 @@
       ],
       "notes": "CI 全链构建到 electron-builder 产出 DeepSeek Harness.exe 后，runtime-host.mjs verify 启动打包 host 做健康探针 → HTTP 401。根因：探针正则 /\bdsh web:s+(http://127.0.0.1:d+)/ 只截取 origin，丢掉公告 URL 的 ?token=…，而较新上游（0.1.6-alpha.1）的 host 强制校验启动 token。修法：正则改为捕获完整 URL（[^s]*），探针按原样带 token 访问；无 token 的旧 host 仍匹配兼容。",
       "verify": "node --check + 正则可读性探针（带/不带 token 两例）"
+    },
+    {
+      "id": "R48",
+      "area": "desktop",
+      "title": "runtime-host verify 探针自行完成浏览器认证换票（修复打包自检 HTTP 401）",
+      "status": "ACTIVE",
+      "owner": "product/app/desktop/scripts/runtime-host.mjs",
+      "files": [
+        "product/app/desktop/scripts/runtime-host.mjs"
+      ],
+      "notes": "R47 保留 token 后仍 401。读上游新 tag 实现 packages/client/connection/src/browser-auth.ts 得知契约变了：带合法 ?token= 的 GET / 返回 **303 Location:/ + Set-Cookie dsh-auth-<authority-hash>**（HttpOnly/SameSite=Strict，签名 cookie），只有携带该 cookie 的请求才拿 index；无 token 或错 token 则 401。Node fetch 不持久化 cookie，故探针首跳必然跟到无 cookie 的 / → 401。修法：新增 probeWebHost() —— redirect:manual 取 303 的 Set-Cookie，用 Cookie 头复请 /，校验 200+text/html+__DSH_BOOT__；旧版 host 直出 HTML 的路径保留兼容；错 token 仍正确拒绝。",
+      "verify": "node --check + 抽取真实函数对三种服务端行为（303换票/直出HTML/错token）实测：PASS/PASS/正确拒绝"
     }
   ]
 }

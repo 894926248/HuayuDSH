@@ -173,6 +173,49 @@ async function runHostSmoke(pointer, home) {
   }
 }
 
+/**
+ * Prove the announced Web host serves the boot document.
+ *
+ * Hosts with browser auth (`BrowserAuth.authorizeIndex`) do NOT answer the
+ * launch URL with the index: a valid `?token=` gets `303 /` plus a signed
+ * `Set-Cookie`, and only a request carrying that cookie gets the HTML. Node's
+ * fetch does not persist cookies, so the probe must exchange the token itself;
+ * older hosts without auth answer the index directly, which stays supported.
+ */
+async function probeWebHost(url) {
+  const isBootDocument = async (response) => {
+    if (!response.ok) return false
+    if (!response.headers.get('content-type')?.toLowerCase().includes('text/html')) return false
+    return (await response.text()).includes('__DSH_BOOT__')
+  }
+
+  let response = await fetch(url, { redirect: 'manual' })
+  if (await isBootDocument(response)) return
+
+  const cookies = new Map()
+  const setCookies = typeof response.headers.getSetCookie === 'function'
+    ? response.headers.getSetCookie()
+    : [response.headers.get('set-cookie')].filter(value => typeof value === 'string')
+  for (const entry of setCookies) {
+    const at = entry.indexOf('=')
+    if (at <= 0) continue
+    const name = entry.slice(0, at).trim()
+    const value = entry.slice(at + 1).split(';')[0].trim()
+    if (name !== '' && value !== '') cookies.set(name, value)
+  }
+
+  if (cookies.size === 0) {
+    throw new Error(`unexpected Web host response at ${url} (HTTP ${String(response.status)})`)
+  }
+
+  const location = response.headers.get('location')
+  const target = new URL(location === null ? '/' : location, url).href
+  const cookie = [...cookies].map(([name, value]) => `${name}=${value}`).join('; ')
+  response = await fetch(target, { redirect: 'manual', headers: { cookie } })
+  if (await isBootDocument(response)) return
+  throw new Error(`unexpected Web host response at ${target} (HTTP ${String(response.status)})`)
+}
+
 function waitForWebHost(child) {
   return new Promise((resolveReady, rejectReady) => {
     let output = ''
@@ -193,11 +236,7 @@ function waitForWebHost(child) {
       const url = match?.[1]
       if (url === undefined || probing) return
       probing = true
-      void fetch(url).then(async response => {
-        const document = await response.text()
-        if (!response.ok || !response.headers.get('content-type')?.toLowerCase().includes('text/html') || !document.includes('__DSH_BOOT__')) {
-          throw new Error(`unexpected Web host response at ${url} (HTTP ${String(response.status)})`)
-        }
+      void probeWebHost(url).then(() => {
         settle(resolveReady)
       }).catch(error => {
         settle(rejectReady, new Error(`desktop: packaged Web host probe failed: ${String(error)}\n${output.trim()}`))
