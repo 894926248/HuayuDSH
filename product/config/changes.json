@@ -818,6 +818,18 @@
       ],
       "notes": "应用侧链路已存在（switchVersion → 未下载则 downloadVersion → app.relaunch+exit），缺的是「可下载的产品构建」。上游 releases 无资产、fork releases 为空 → 新增 CI：windows-latest + submodules，fetch 上游 tags 后 checkout（默认取最新未发布 tag，也可 workflow_dispatch 指定），pnpm install --frozen-lockfile，pnpm run product:desktop:portable 产出 DeepSeek Harness.exe，gh release create v<version>（title=上游版本号，资产名保持 DeepSeek Harness.exe，乃壳解析契约）。契约：tag_name→productVersion、name→upstreamVersion、asset→下载后写入版本库并 relaunch。",
       "verify": "YAML 结构人工核对（无本地 parser）；首次 CI 运行结果待确认"
+    },
+    {
+      "id": "R44",
+      "area": "product",
+      "title": "overlay-manifest 刷新：修正 4 个 frontend 覆盖哈希并移除 10 行失效覆盖（packages/client/** 已迁插件）",
+      "status": "ACTIVE",
+      "owner": "product/config",
+      "files": [
+        "product/config/overlay-manifest.json"
+      ],
+      "notes": "CI 非 fast 链在 prepare-product-source 报 product overlay hash mismatch: frontend/apps/web/src/css.d.ts → 叠加源改过但清单未刷新（--fast 链跳过该步故本地未暴露）。运行 product/tools/rebuild-frontend-overlay.mjs 刷新：4 行（apps/web/src/{css.d.ts,desktop-chrome.css,desktop-chrome.ts,main.ts}）哈希更新；10 行 packages/client/**（ui-conversation chat CSS、ui-layout AppFrame 等）因源文件已迁为插件而失效被移除——符合「覆盖收敛到零」方向。",
+      "verify": "node product/tools/rebuild-frontend-overlay.mjs 输出 refreshed at b150a551 / indexed 4 UI files"
     }
   ]
 }
