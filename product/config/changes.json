@@ -878,6 +878,18 @@
       ],
       "notes": "R47 保留 token 后仍 401。读上游新 tag 实现 packages/client/connection/src/browser-auth.ts 得知契约变了：带合法 ?token= 的 GET / 返回 **303 Location:/ + Set-Cookie dsh-auth-<authority-hash>**（HttpOnly/SameSite=Strict，签名 cookie），只有携带该 cookie 的请求才拿 index；无 token 或错 token 则 401。Node fetch 不持久化 cookie，故探针首跳必然跟到无 cookie 的 / → 401。修法：新增 probeWebHost() —— redirect:manual 取 303 的 Set-Cookie，用 Cookie 头复请 /，校验 200+text/html+__DSH_BOOT__；旧版 host 直出 HTML 的路径保留兼容；错 token 仍正确拒绝。",
       "verify": "node --check + 抽取真实函数对三种服务端行为（303换票/直出HTML/错token）实测：PASS/PASS/正确拒绝"
+    },
+    {
+      "id": "R49",
+      "area": "desktop",
+      "title": "壳层适配 host 浏览器认证：公告 URL 保留 token + 就绪探测接受换票重定向 + 主进程请求带会话 cookie",
+      "status": "ACTIVE",
+      "owner": "product/app/desktop/src/main.ts",
+      "files": [
+        "product/app/desktop/src/main.ts"
+      ],
+      "notes": "与 R47/R48 同源问题：上游 0.1.6-alpha.1 起 host 强制浏览器认证（合法 GET /?token= → 303 + Set-Cookie 签名 cookie，无 cookie 一律 401）。壳侧三处受影响：①waitForAnnouncedUrl 正则只截 origin，丢掉 ?token= → 窗口 loadURL 裸 origin 必 401 白屏（已改为保留完整 URL）；②probeHost 用普通 fetch（自动跟跳到无 cookie 的 /）→ 就绪探测永远失败（改为 redirect:manual，3xx+Location 即视为 host 已就绪，认证握手交由窗口完成）；③主进程无 cookie jar，warmUpModelDirectory 的 /api/* 请求会 401 导致模型目录预热静默失效（新增 authCookieFor(origin) 一次性换票并缓存，请求带 cookie 头）。旧版无认证 host 全部路径保持兼容。",
+      "verify": "tsc -b 通过"
     }
   ]
 }

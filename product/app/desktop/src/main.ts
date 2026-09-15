@@ -189,12 +189,52 @@ function currentUpstreamVersion(): string {
  * directory build (which can take tens of seconds). Best-effort: any failure
  * is ignored — the picker still loads on demand.
  */
+/**
+ * Session cookie minted by the host's launch-token exchange, per authority.
+ *
+ * A host with browser auth answers a valid `GET /?token=…` with `303 /` plus a
+ * signed `Set-Cookie`; every later request must carry that cookie. The Electron
+ * window owns its own jar, but main-process calls (pre-warm, recovery probes)
+ * have none, so mirror the cookie here. Keyed by origin because the cookie name
+ * is derived from the request authority and the port changes per host start.
+ */
+const hostAuthCookies = new Map<string, string>()
+
+async function authCookieFor(url: URL): Promise<string | undefined> {
+  const cached = hostAuthCookies.get(url.origin)
+  if (cached !== undefined) return cached
+  try {
+    const response = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(HOST_REQUEST_TIMEOUT_MS) })
+    const headers = response.headers as unknown as { getSetCookie?: () => string[] }
+    const list = typeof headers.getSetCookie === 'function'
+      ? headers.getSetCookie()
+      : [response.headers.get('set-cookie')].filter((value): value is string => typeof value === 'string')
+    const cookies = list.flatMap(entry => {
+      const at = entry.indexOf('=')
+      if (at <= 0) return []
+      const name = entry.slice(0, at).trim()
+      const value = entry.slice(at + 1).split(';')[0]?.trim() ?? ''
+      return name === '' || value === '' ? [] : [`${name}=${value}`]
+    })
+    if (cookies.length === 0) return undefined
+    const cookie = cookies.join('; ')
+    hostAuthCookies.set(url.origin, cookie)
+    return cookie
+  } catch {
+    return undefined
+  }
+}
+
 async function warmUpModelDirectory(hostUrl: URL, delayMs = 0): Promise<void> {
   if (delayMs > 0) await new Promise<void>(resolve => { setTimeout(resolve, delayMs) })
+  const cookie = await authCookieFor(hostUrl)
   const call = async (method: string, payload: Record<string, unknown>): Promise<unknown> => {
     const response = await fetch(new URL(`/api/${method}`, hostUrl), {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        ...(cookie === undefined ? {} : { cookie }),
+      },
       body: JSON.stringify({ type: 'client-request', rpcId: `warmup-${method}`, method, payload }),
     })
     if (!response.ok) throw new Error(`${method} HTTP ${String(response.status)}`)
@@ -639,7 +679,10 @@ class DshHost {
   private async waitForAnnouncedUrl(): Promise<URL> {
     const deadline = Date.now() + HOST_START_TIMEOUT_MS
     while (Date.now() < deadline) {
-      const match = /\bdsh web:\s+(http:\/\/(?:127\.0\.0\.1|localhost):\d+)/iu.exec(this.output)
+      // Keep the announcement verbatim, query string included: a host with
+      // browser auth carries its launch token as `?token=…`, and the window
+      // load must keep it to complete the cookie handshake.
+      const match = /\bdsh web:\s+(http:\/\/(?:127\.0\.0\.1|localhost):\d+[^\s]*)/iu.exec(this.output)
       const announcedUrl = match?.[1]
       if (announcedUrl !== undefined) return parseLoopbackUrl(announcedUrl)
       if (this.exitReason !== undefined) {
@@ -662,7 +705,12 @@ function resolveDshHome(): string {
 }
 
 async function probeHost(url: URL): Promise<void> {
-  const response = await fetch(url, { signal: AbortSignal.timeout(HOST_REQUEST_TIMEOUT_MS) })
+  const response = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(HOST_REQUEST_TIMEOUT_MS) })
+  // Browser-auth hosts answer the launch URL with a redirect to `/` plus a
+  // signed session cookie (`BrowserAuth.authorizeIndex`); the cookie jar lives
+  // in the Electron session, so a redirect proves the host is serving and the
+  // window load below will complete the authenticated handshake.
+  if (response.status >= 300 && response.status < 400 && response.headers.get('location') !== null) return
   const document = await response.text()
   if (!isDshWebHostResponse(response.status, response.headers.get('content-type'), document)) {
     throw new Error(`dsh web returned an unexpected response at ${url.toString()} (HTTP ${String(response.status)})`)
