@@ -913,7 +913,7 @@
       "files": [
         "product/tools/build-desktop-release.mjs"
       ],
-      "notes": "现象：portable 目标 makensis 报  → Error in macro extractEmbeddedAppPackage → ERR_ELECTRON_BUILDER_CANNOT_EXECUTE。根因：桌面包 compression=store（产品层为快速出 unpacked 包而设）使内嵌 .nsis.7z 约等于整包 2.1GB（ESTIMATED_SIZE=2113961KB），超过 NSIS 3.0.4.1 对嵌入归档的 2GB mmap 上限（electron-builder 已知问题 #3916/#8077）。修法：portable 模式追加 --config.compression=normal（仅便携产物压缩，dev unpacked 仍 store 不变），内嵌归档降到数百 MB。",
+      "notes": "现象：portable 目标 makensis 报 failed creating mmap of @deepseek-aidsh-desktop-….nsis.7z → Error in macro extractEmbeddedAppPackage → ERR_ELECTRON_BUILDER_CANNOT_EXECUTE。根因：桌面包 compression=store（产品层为快速出 unpacked 包而设）使内嵌 .nsis.7z 约等于整包 2.1GB（ESTIMATED_SIZE=2113961KB），超过 NSIS 3.0.4.1 对嵌入归档的 2GB mmap 上限（electron-builder 已知问题 #3916/#8077）。修法：portable 模式追加 --config.compression=normal（仅便携产物压缩，dev unpacked 仍 store 不变），内嵌归档降到数百 MB。",
       "verify": "node --check + 参数拼装探针"
     }
   ]
