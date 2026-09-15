@@ -2,6 +2,11 @@
 # version menu can offer it as a one-click update (download -> switch ->
 # relaunch; see switchVersion/downloadVersion in product/app/desktop).
 #
+# Why the build checks out `ci-full`: this repository's default branch holds a
+# partial product snapshot, while the maintainable product tree (product/,
+# plugins/, lockfile) lives on the `ci-full` branch. The workflow file itself
+# must stay on the default branch so schedule/dispatch can find it.
+#
 # The app resolves candidates from this repository's GitHub releases:
 #   tag_name  -> product version   (release id, e.g. v0.1.6-alpha.1)
 #   name      -> upstream version  (shown in the picker)
@@ -33,9 +38,11 @@ jobs:
   publish:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout product tree
+        uses: actions/checkout@v5
         with:
-          submodules: recursive
+          ref: ci-full
+          path: product-repo
 
       - uses: pnpm/action-setup@v4
         with:
@@ -45,13 +52,18 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: product-repo/pnpm-lock.yaml
 
       - name: Resolve upstream tag
         shell: bash
+        working-directory: product-repo
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          if [ ! -d upstream/.git ]; then
+            git clone --filter=blob:none --no-checkout https://github.com/deepseek-ai/deepseek-harness.git upstream
+          fi
           git -C upstream fetch --tags --force origin
           requested='${{ inputs.tag }}'
           if [ -n "$requested" ]; then
@@ -84,15 +96,18 @@ jobs:
 
       - name: Install dependencies
         if: env.SKIP != '1'
+        working-directory: product-repo
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build portable package
         if: env.SKIP != '1'
+        working-directory: product-repo
         run: pnpm run product:desktop:portable
 
       - name: Publish release
         if: env.SKIP != '1'
         shell: bash
+        working-directory: product-repo
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
