@@ -1,6 +1,13 @@
-# Publish a portable product build for an upstream tag, so the desktop app's
-# version menu can offer it as a one-click update (download -> switch ->
-# relaunch; see switchVersion/downloadVersion in product/app/desktop).
+# Publish portable product builds for upstream tags, on demand, so the desktop
+# app's version menu can offer a version as a one-click update (download ->
+# switch -> relaunch; see switchVersion/downloadVersion in product/app/desktop).
+#
+# Deliberately NOT a bulk backfill: a sweep builds only the newest tag without a
+# published build, explicit requests name the versions they want, and the `prune`
+# job deletes product releases after a few days — so the fleet stays small and
+# only versions someone actually asked for are ever compiled. Retention is what
+# makes that safe: an aged-out version simply shows up as "not built" again and
+# is rebuilt on request.
 #
 # Why the build checks out `ci-full`: this repository's default branch holds a
 # partial product snapshot, while the maintainable product tree (product/,
@@ -20,13 +27,13 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Upstream tag to build (e.g. dsh-v0.1.6-alpha.1). Leave empty for the newest unpublished tag.'
+        description: 'Upstream tag(s) to build, comma separated (e.g. dsh-v0.1.5-rc.2). Leave empty for the newest unpublished tag.'
         required: false
         default: ''
   schedule:
     # Poll upstream every 10 minutes: GitHub offers no cross-repository tag
-    # subscription, so the sweep doubles as the subscription. When nothing new
-    # exists the job exits after the resolve step (seconds, no build).
+    # subscription, so the sweep doubles as the subscription. When nothing is
+    # missing the plan job reports an empty matrix and no build runs.
     - cron: '*/10 * * * *'
 
 permissions:
@@ -37,8 +44,56 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.plan.outputs.tags }}
+    steps:
+      - name: Work out which upstream tags still need a product release
+        id: plan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED: ${{ inputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Explicit requests build exactly those versions. A sweep looks only at
+          # the single newest upstream tag: if it already has a build there is
+          # nothing to do, and older tags are never compiled in bulk — they are
+          # built on request instead.
+          if [ -n "${REQUESTED:-}" ]; then
+            list="$(printf '%s' "$REQUESTED" | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^dsh-v//' | grep -v '^$' || true)"
+          else
+            newest="$(gh api repos/deepseek-ai/deepseek-harness/tags?per_page=100 --jq '.[].name' \
+              | sed 's/^dsh-v//' | sort -V -r | head -n 1 || true)"
+            if [ -n "$newest" ] && ! gh release view "v$newest" --repo "$REPOSITORY" >/dev/null 2>&1; then
+              list="$newest"
+            else
+              list=""
+            fi
+          fi
+          {
+            printf 'tags=['
+            first=1
+            while IFS= read -r version; do
+              [ -z "$version" ] && continue
+              if [ "$first" = 1 ]; then first=0; else printf ','; fi
+              printf '"%s"' "$version"
+            done <<< "$list"
+            printf ']\n'
+          } >> "$GITHUB_OUTPUT"
+          echo "planned versions:"; printf '%s\n' "$list"
+
   publish:
+    needs: plan
+    if: needs.plan.outputs.tags != '' && needs.plan.outputs.tags != '[]'
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        tag: ${{ fromJSON(needs.plan.outputs.tags) }}
     steps:
       # The product overlay manifest pins byte-level SHA-256 digests of the
       # overlay sources; Windows runners default to core.autocrlf=true, which
@@ -56,55 +111,51 @@ jobs:
           ref: ci-full
           path: product-repo
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.7.0
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: product-repo/pnpm-lock.yaml
-
-      - name: Resolve upstream tag
+      # A parallel sweep may have published this version already; skip early
+      # rather than spend twenty minutes rebuilding it.
+      - name: Skip when already published
         shell: bash
         working-directory: product-repo
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          if gh release view "v${{ matrix.tag }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "v${{ matrix.tag }} already has a product release"
+            echo "SKIP=1" >> "$GITHUB_ENV"
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: env.SKIP != '1'
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v5
+        if: env.SKIP != '1'
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: product-repo/pnpm-lock.yaml
+
+      - name: Check out upstream at dsh-v${{ matrix.tag }}
+        if: env.SKIP != '1'
+        shell: bash
+        working-directory: product-repo
+        run: |
+          set -euo pipefail
+          tag='dsh-v${{ matrix.tag }}'
           if [ ! -d upstream/.git ]; then
             git clone --filter=blob:none --no-checkout https://github.com/deepseek-ai/deepseek-harness.git upstream
           fi
           git -C upstream fetch --tags --force origin
-          requested='${{ inputs.tag }}'
-          if [ -n "$requested" ]; then
-            tag="$requested"
-          else
-            tag=''
-            while IFS= read -r candidate; do
-              [ -z "$candidate" ] && continue
-              if gh release view "v${candidate#dsh-v}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-                continue
-              fi
-              tag="$candidate"
-              break
-            done < <(git -C upstream tag --list 'dsh-v*' --sort=-version:refname)
-          fi
-          if [ -z "$tag" ]; then
-            echo "no unpublished upstream tag found"
-            echo "SKIP=1" >> "$GITHUB_ENV"
-            exit 0
-          fi
           if ! git -C upstream rev-parse --verify --quiet "refs/tags/$tag" >/dev/null; then
             echo "unknown upstream tag: $tag" >&2
             exit 1
           fi
-          version="${tag#dsh-v}"
           git -C upstream checkout --detach "$tag"
           echo "TAG=$tag" >> "$GITHUB_ENV"
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-          echo "building $tag (version $version)"
+          echo "VERSION=${{ matrix.tag }}" >> "$GITHUB_ENV"
+          echo "building $tag (version ${{ matrix.tag }})"
 
       - name: Install dependencies
         if: env.SKIP != '1'
@@ -145,3 +196,34 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "$VERSION" \
             --notes "Portable product build for upstream $TAG. Installable from the desktop app's version menu (download, switch, relaunch)."
+
+  # Product builds are bulky (~380 MB each), so they are kept for a short window
+  # only. An aged-out version stops being offered as a download and goes back to
+  # "not built", which is exactly what the on-demand model above assumes.
+  prune:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPOSITORY: ${{ github.repository }}
+      RETENTION_DAYS: '3'
+    steps:
+      - name: Delete product releases older than the retention window
+        shell: bash
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d "${RETENTION_DAYS} days ago" +%s)"
+          echo "cutoff: $(date -u -d "@$cutoff" '+%Y-%m-%d %H:%M:%SZ')"
+          if ! gh api "repos/$REPOSITORY/releases?per_page=100" --jq '.[] | [.created_at, .tag_name] | @tsv' > /tmp/releases.tsv 2>/dev/null; then
+            echo "no releases readable; nothing to prune"
+            exit 0
+          fi
+          while IFS=$'\t' read -r created tag; do
+            [ -z "$tag" ] && continue
+            published="$(date -u -d "$created" +%s)"
+            if [ "$published" -lt "$cutoff" ]; then
+              echo "pruning $tag (published $created)"
+              gh release delete "$tag" --repo "$REPOSITORY" --cleanup-tag --yes || true
+            fi
+          done < /tmp/releases.tsv
+          echo "remaining:"
+          gh release list --repo "$REPOSITORY" --limit 10 || true
