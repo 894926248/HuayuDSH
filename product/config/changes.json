@@ -903,6 +903,18 @@
       ],
       "notes": "现象：CI 全链构建通过（源准备/web/桌面/electron-builder/verify 全绿）后，build-desktop-portable.mjs 报「portable executable is missing: staging/desktop/DeepSeek Harness.exe」。根因：product:build（build-desktop-release.mjs）固定用 electron-builder --dir，只产出 win-unpacked/ 目录；而产品文档 update-chain.md 定义 product:desktop:portable 为便携分发模式、且桌面包 electron-builder 的 win.target 本来就是 portable（artifactName=DeepSeek Harness.exe）。即便携链路的下游（本脚本 + 版本菜单下载契约 executable=DeepSeek Harness.exe）与上游构建目标不一致。修法：build-desktop-release.mjs 新增 --portable（portable 时不加 --dir，产出单文件 exe，同时仍生成 win-unpacked 供 verify）；build-desktop-portable.mjs 透传 -- --portable。",
       "verify": "node --check 双文件 + flag/参数拼装探针"
+    },
+    {
+      "id": "R51",
+      "area": "product",
+      "title": "portable 打包改用真实压缩（绕过 NSIS 3.0.4.1 的 2GB mmap 上限）",
+      "status": "ACTIVE",
+      "owner": "product/tools/build-desktop-release.mjs",
+      "files": [
+        "product/tools/build-desktop-release.mjs"
+      ],
+      "notes": "现象：portable 目标 makensis 报  → Error in macro extractEmbeddedAppPackage → ERR_ELECTRON_BUILDER_CANNOT_EXECUTE。根因：桌面包 compression=store（产品层为快速出 unpacked 包而设）使内嵌 .nsis.7z 约等于整包 2.1GB（ESTIMATED_SIZE=2113961KB），超过 NSIS 3.0.4.1 对嵌入归档的 2GB mmap 上限（electron-builder 已知问题 #3916/#8077）。修法：portable 模式追加 --config.compression=normal（仅便携产物压缩，dev unpacked 仍 store 不变），内嵌归档降到数百 MB。",
+      "verify": "node --check + 参数拼装探针"
     }
   ]
 }

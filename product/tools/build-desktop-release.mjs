@@ -487,9 +487,13 @@ try {
       // `--dir` leaves only `win-unpacked/`; the portable distribution mode
       // additionally needs the single-file `win.target: portable` artifact
       // (its own `.exe` at the staging root) that the version menu downloads.
+      // The package config keeps `compression: store` for fast unpacked dev
+      // builds, but NSIS (3.0.4.1) memory-maps the embedded app archive and
+      // fails above 2 GB — which the stored full runtime exceeds — so portable
+      // mode asks for a real compression level instead.
       run('pnpm', [
         '--filter', '@deepseek-ai/dsh-desktop', 'exec', 'electron-builder',
-        ...(portableMode ? [] : ['--dir']),
+        ...(portableMode ? ['--config.compression=normal'] : ['--dir']),
       ])
     }
     run('node', ['product/app/desktop/scripts/runtime-host.mjs', 'verify', '--unpacked', unpackedRoot])
