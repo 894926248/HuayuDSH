@@ -109,6 +109,19 @@ jobs:
         working-directory: product-repo
         run: pnpm install --frozen-lockfile --ignore-scripts
 
+      # prepare-product-source installs the upstream worktree with --offline,
+      # so its devDependencies must already sit in the pnpm store. Warm the
+      # store once, online, using the same upstream revision the build will pin.
+      - name: Warm pnpm store for the upstream source
+        if: env.SKIP != '1'
+        shell: bash
+        working-directory: product-repo
+        run: |
+          set -euo pipefail
+          git -C upstream worktree add --detach ../upstream-warm HEAD
+          ( cd ../upstream-warm && pnpm install --no-frozen-lockfile --ignore-scripts )
+          git -C upstream worktree remove --force ../upstream-warm
+
       - name: Build portable package
         if: env.SKIP != '1'
         working-directory: product-repo
